@@ -6,8 +6,9 @@ CREATE TABLE Categories (
     -- category needs (not null) a unique name
     category_description TEXT,                
     -- additional info about category
-    category_visibility BOOLEAN NOT NULL DEFAULT 1
+    category_visibility BOOLEAN NOT NULL DEFAULT 1,
     -- indicates whether a category is active (displayed and accessible) or not
+    category_timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 /* CategoriesList keeps a centralized list of all different keywords that can be associated 
 with an item such that it can be searched as sets, intersections and unions */
@@ -27,7 +28,7 @@ CREATE TABLE ElementCategories (
     -- ensures category_id exists in the Category table
     -- when a category is deleted, all items with such a category lose that category
 
-    itemcategory_visibility BOOLEAN NOT NULL DEFAULT 1,
+    elemcat_visibility BOOLEAN NOT NULL DEFAULT 1,
     -- indicates whether an association is active (displayed and accessible) or not
     
     PRIMARY KEY (elemcat_item, elemcat_category)        
@@ -40,11 +41,13 @@ Value: the relation between the two which is bound by a unique */
 
 CREATE TABLE Users (
     user_username VARCHAR(31) PRIMARY KEY, -- Unchangeable username/ID 
-    user_password_salthash VARCHAR(255) NOT NULL, -- Hash of the user's password 
+    
+	user_salthash VARCHAR(255) UNIQUE NOT NULL, -- Hash of the user's password 
+
     user_timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- DateTime of registration
     
-    user_failed_logins INT NOT NULL DEFAULT 0, 
+    user_failedlogs INT NOT NULL DEFAULT 0, 
     -- exceeding a certain limit indicates brute force 
     -- account will lock until admin intervention reviewing logs and then resetting
     -- count also resets at start of program execution
@@ -63,12 +66,12 @@ CREATE TABLE Users (
     -- admin role has all permissions including over base and super users
     -- super(visor) role has the permissions to edit data along with admin
     
-    user_legal_name VARCHAR(63),  -- name user identifies with in real life
-    user_phone_number VARCHAR(15), -- iso standard phone number length (omit non numerals)
-    user_email_address VARCHAR(255), -- online email address (verify contains @ and . after)
+    user_legalname VARCHAR(63),  -- name user identifies with in real life
+    user_phonenumber VARCHAR(15), -- iso standard phone number length (omit non numerals)
+    user_emailaddress VARCHAR(255), -- online email address (verify contains @ and . after)
     -- these fields are mutable
 
-    user_note TEXT,
+    user_description TEXT,
 );
 /* Relational table, note: append only, users cannot be deleted once created since records
 need to be kept of who owns and has contributed what. Only an owner or Admin can transfer 
@@ -91,13 +94,14 @@ CREATE TABLE Element (
     -- relocate these children to the parent above need to be implemented 
     -- only an admin can call true deletion with password confirmation
         
-    element_owner_username VARCHAR(31) NOT NULL,
+    element_owner VARCHAR(31) NOT NULL,
     -- username of the user who created an item
     FOREIGN KEY (element_owner) REFERENCES Users(user_username)
 
-    element_thumbnail_filepath TEXT,
+    element_thumbpath TEXT,
     
-    element_visibility BOOLEAN NOT NULL DEFAULT 1, 
+    element_visibility BOOLEAN NOT NULL DEFAULT 1,
+     
     element_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP 
 );
 /* Relational table of nodes in a non-self non-child nesting tree structure, with the root 
