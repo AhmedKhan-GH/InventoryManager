@@ -12,23 +12,25 @@ CREATE TABLE Categories (
 /* CategoriesList keeps a centralized list of all different keywords that can be associated 
 with an item such that it can be searched as sets, intersections and unions */
 
-CREATE TABLE ItemCategories (
-    itemcategory_item VARCHAR(6) NOT NULL,        
+CREATE TABLE ElementCategories (
+	elemcat_timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    elemcat_item_guid VARCHAR(6) NOT NULL,        
     -- base_32 GUID of existing item to categorize
-    FOREIGN KEY (itemcategory_item) REFERENCES Items(item_guid) ON DELETE CASCADE,
+    FOREIGN KEY (elemcat_item_guid) REFERENCES Items(element_guid) ON DELETE CASCADE,
     -- ensures item_guid exists in the Item table
     -- when an item is deleted, its related category assignments are as well
 
-    itemcategory_category INT NOT NULL,            
+    elemcat_category_id INT NOT NULL,            
     -- assignment of category from CategoriesList
-    FOREIGN KEY (itemcategory_category) REFERENCES Categories(category_id) ON DELETE CASCADE,
+    FOREIGN KEY (elemcat_category_id) REFERENCES Categories(category_id) ON DELETE CASCADE,
     -- ensures category_id exists in the Category table
     -- when a category is deleted, all items with such a category lose that category
 
     itemcategory_visibility BOOLEAN NOT NULL DEFAULT 1,
     -- indicates whether an association is active (displayed and accessible) or not
     
-    PRIMARY KEY (itemcategory_item, itemcategory_category)        
+    PRIMARY KEY (elemcat_item, elemcat_category)        
     -- this relationship uniquely identifies an entry
 );
 /* ItemCategories keeps a EAV (entity-attribute-value) model with a foreign key constraint
@@ -37,9 +39,9 @@ Attribute: category_id,
 Value: the relation between the two which is bound by a unique */
 
 CREATE TABLE Users (
-    user_name VARCHAR(31) PRIMARY KEY, -- Unchangeable username/ID 
-    user_password_hash VARCHAR(255) NOT NULL, -- Hash of the user's password 
-    user_registration DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    user_username VARCHAR(31) PRIMARY KEY, -- Unchangeable username/ID 
+    user_password_salthash VARCHAR(255) NOT NULL, -- Hash of the user's password 
+    user_timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- DateTime of registration
     
     user_failed_logins INT NOT NULL DEFAULT 0, 
@@ -72,29 +74,31 @@ CREATE TABLE Users (
 need to be kept of who owns and has contributed what. Only an owner or Admin can transfer 
 ownership of an item to another owner */
 
-CREATE TABLE Items (
-    item_guid VARCHAR(6) PRIMARY KEY,
+CREATE TABLE Element (
+    element_guid VARCHAR(6) PRIMARY KEY,
     -- globally unique base_32 guid
     
-    item_name VARCHAR(63) NOT NULL,
+    element_name VARCHAR(63) NOT NULL,
     -- lexical identifier for everyday use
-    item_description TEXT,
-    -- additional description such as if this item is a shelf, rack, flight case room, warehouse, etc
+    element_description TEXT,
+	-- lexical description of an element, info such as address
+	
+	element_class ENUM('WAREHOUSE', 'STOREROOM', 'BAY', 'RACK', 'SHELF', 'CONTAINER', 'ITEM', 'BULK', 'MATERIAL') NOT NULL,
     
-    item_parent VARCHAR(6), -- parent guid, foreign key ensures existence
-    FOREIGN KEY (item_parent) REFERENCES Items(item_guid) ON DELETE CASCADE,
+    element_parent_guid VARCHAR(6), -- parent guid, foreign key ensures existence
+    FOREIGN KEY (element_parent) REFERENCES Items(element_guid) ON DELETE CASCADE,
     -- deleting an item will delete all of its children, so contingencies to
     -- relocate these children to the parent above need to be implemented 
     -- only an admin can call true deletion with password confirmation
         
-    item_owner VARCHAR(31) NOT NULL,
+    element_owner_username VARCHAR(31) NOT NULL,
     -- username of the user who created an item
-    FOREIGN KEY (item_owner) REFERENCES Users(user_name)
+    FOREIGN KEY (element_owner) REFERENCES Users(user_username)
 
-    item_thumbnail_path TEXT,
+    element_thumbnail_filepath TEXT,
     
-    item_visibility BOOLEAN NOT NULL DEFAULT 1, 
-    creation_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP 
+    element_visibility BOOLEAN NOT NULL DEFAULT 1, 
+    element_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP 
 );
 /* Relational table of nodes in a non-self non-child nesting tree structure, with the root 
 node being null and a few root tree nodes such as 000000 as root and 111111 as deprecated. 
