@@ -63,7 +63,7 @@ CREATE TABLE Users (
     
     user_legal_name VARCHAR(63),  -- name user identifies with in real life
     user_phone_number VARCHAR(15), -- iso standard phone number length (omit non numerals)
-    user_email_address VARCHAR(127), -- online email address (verify contains @ and . after)
+    user_email_address VARCHAR(255), -- online email address (verify contains @ and . after)
     -- these fields are mutable
 
     user_note TEXT,
@@ -85,6 +85,7 @@ CREATE TABLE Items (
     FOREIGN KEY (item_parent) REFERENCES Items(item_guid) ON DELETE CASCADE,
     -- deleting an item will delete all of its children, so contingencies to
     -- relocate these children to the parent above need to be implemented 
+    -- only an admin can call true deletion with password confirmation
         
     item_owner VARCHAR(31) NOT NULL,
     -- username of the user who created an item
@@ -97,7 +98,7 @@ CREATE TABLE Items (
 );
 /* Relational table of nodes in a non-self non-child nesting tree structure, with the root 
 node being null and a few root tree nodes such as 000000 as root and 111111 as deprecated. 
-For the deletion of an item, have the user retype the GUID as a sanity check and select a list of contingencies from assign to Parent, assign to root, and deprecate */
+For the deletion of an item, have the user retype the GUID as a sanity check and select a list of contingencies from assign to Parent, assign to root, and deprecate, true deletion only admin with password confirmation*/
 
 
 ```
