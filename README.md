@@ -1,7 +1,11 @@
 # InventoryManager
 
 ```
+<<<<<<< HEAD
 SQLite database with C++ logic and wxWidgets interface for management of non-salable permanent possessions in personal and business environments
+=======
+SQLite database with C++ logic and wxWidgets interface
+>>>>>>> parent of ec29be2 (Revert "cryptopp library, PasswordHasher class, start of user schema")
 ```
 
 - Achievements:
@@ -13,4 +17,8 @@ SQLite database with C++ logic and wxWidgets interface for management of non-sal
 - Next Steps:
 	- Generic DAO to begin creating schema/table specific classes
 	- each dao will have unique prepared statements and data queries based on project requirements
+<<<<<<< HEAD
 	- need to run and document tests with main()
+=======
+	- need to run and document tests with main()
+>>>>>>> parent of ec29be2 (Revert "cryptopp library, PasswordHasher class, start of user schema")
