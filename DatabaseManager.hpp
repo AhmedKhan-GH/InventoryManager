@@ -1,6 +1,3 @@
-#ifndef DATABASEMANAGER_HPP
-#define DATABASEMANAGER_HPP
-
 #include "sqlite3.h"
 #include <string>
 #include <stdexcept>
@@ -73,4 +70,3 @@ private:
     std::string database_path;
 };
 
-#endif DATABASEMANAGER_HPP
