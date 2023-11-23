@@ -4,6 +4,7 @@
 #include "sqlite3.h"
 #include <string>
 #include <stdexcept>
+#include <iostream>
 
 class DatabaseManager {
 public:
@@ -29,6 +30,7 @@ public:
         if (sqlite3_exec(database_connection, query.c_str(), nullptr, nullptr, &error_message) != SQLITE_OK) {
             std::string error = "Error in executeQuery: ";
             error += error_message;
+            std::cout << error;
             sqlite3_free(error_message);
             throw std::runtime_error(error);
         }

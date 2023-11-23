@@ -9,19 +9,17 @@ int main()
 	database.createTableIfNotExists
 	(
 		"Users",
-		"user_id INT PRIMARY KEY AUTO_INCREMENT,"
-		"user_name VARCHAR(32) UNIQUE NOT NULL,"
-		"CONSTRAINT username_allowed_chars CHECK (username ~ '^[a-zA-Z0-9_]+$'),"
-		"user_salt VARCHAR(32) UNIQUE NOT NULL,"
-		"user_passhash VARCHAR(64) UNIQUE NOT NULL,"
-		"user_timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"
-		"user_visibility BOOLEAN NOT NULL DEFAULT 1,"
-		"user_legalname VARCHAR(64),"
-		"user_phonenumber VARCHAR(16),"
-		"CONSTRAINT phonenumber_allowed_chars CHECK(user_phonenumber ~'^[0-9]+$'),"
-		"user_emailaddress VARCHAR(256),"
-		"user_desription TEXT,"
-		"user_permission ENUM('LOCK', 'BASE', 'SUPER', 'ADMIN') NOT NULL DEFAULT 'BASE'"
+        "user_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "user_name TEXT UNIQUE NOT NULL CHECK(length(user_name) <= 32),"
+        "user_salt TEXT UNIQUE NOT NULL CHECK(length(user_salt) <= 32),"
+        "user_passhash TEXT UNIQUE NOT NULL CHECK(length(user_passhash) <= 64),"
+        "user_timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+        "user_visibility BOOLEAN NOT NULL DEFAULT 1,"
+        "user_legalname TEXT CHECK(length(user_legalname) <= 64),"
+        "user_phonenumber TEXT CHECK(length(user_phonenumber) <= 16),"
+        "user_emailaddress TEXT CHECK(length(user_emailaddress) <= 256),"
+        "user_description TEXT,"
+        "user_permission TEXT NOT NULL DEFAULT 'BASE' CHECK(user_permission IN ('LOCK', 'BASE', 'SUPER', 'ADMIN'))"
 	);
 
 

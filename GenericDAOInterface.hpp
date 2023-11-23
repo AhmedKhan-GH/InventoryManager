@@ -7,20 +7,19 @@
 class GenericDAOInterface
 {
 public:
-	virtual ~GenericDAOInterface() {}
-    
-    // Create operation
-    virtual void create(const std::string & data) = 0;
+    virtual ~GenericDAOInterface() {}
 
-    // Read operation
-    virtual std::string read(int id) = 0;
+    // Insert a new record into the database
+    virtual void insertRecord(const std::string& data) = 0;
 
-    // Update operation
-    virtual void update(int id, const std::string & data) = 0;
+    // Retrieve a record by its ID
+    virtual std::string selectRecordById(int id) = 0;
 
-    // Delete operation
-    virtual void delete_(int id) = 0;
+    // Update an existing record by its ID
+    virtual void updateRecordById(int id, const std::string& data) = 0;
 
+    // Delete a record by its ID
+    virtual void deleteRecordById(int id) = 0;
 };
 
 #endif GENERICDAOINTERFACE_HPP
