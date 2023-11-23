@@ -8,8 +8,9 @@
 #include <string>
 
 class PasswordHasher {
-private:
-    static const int SALT_SIZE = 16;
+
+public:
+    PasswordHasher() {}
 
     std::string generateSalt() const {
         CryptoPP::AutoSeededRandomPool rng;
@@ -25,7 +26,7 @@ private:
         return salt_hex;
     }
 
-public:
+
     std::string hashPassword(const std::string& password) const {
         std::string salt = generateSalt();
         std::string salted_password = salt + password;
@@ -64,6 +65,9 @@ public:
 
         return (salt + ":" + new_hash_hex) == stored_hash;
     }
+private:
+
+    static const int SALT_SIZE = 16;
 };
 
 #endif PASSWORDHASHER_HPP

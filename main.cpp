@@ -1,7 +1,10 @@
 #include "DatabaseManager.hpp"
 
+#include <iostream>
+
 int main()
 {
+
 	DatabaseManager database("test_database.db");
 	database.createTableIfNotExists
 	(
@@ -20,4 +23,6 @@ int main()
 		"user_desription TEXT,"
 		"user_permission ENUM('LOCK', 'BASE', 'SUPER', 'ADMIN') NOT NULL DEFAULT 'BASE'"
 	);
+
+
 }
