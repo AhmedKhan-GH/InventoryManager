@@ -9,6 +9,8 @@ SQLite database with C++ logic and wxWidgets interface for management of non-sal
 		- universal table creation query for any schema
 		- modular prepared statements with overloaded binders for various data types
 		- extensible for future DAO's from a derived from a virtual interface generic DAO class
+    		- cryptopp password hashing and validation class using SHA256
+        	- skeleton for genericDAOInterface
 
 - Next Steps:
 	- Generic DAO to begin creating schema/table specific classes
