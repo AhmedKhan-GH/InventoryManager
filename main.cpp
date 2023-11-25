@@ -1,5 +1,5 @@
 #include "DatabaseManager.hpp"
-
+#include "PasswordSecurity.hpp"
 #include <iostream>
 
 int main()
@@ -12,7 +12,7 @@ int main()
         "user_id INTEGER PRIMARY KEY AUTOINCREMENT,"
         "user_name TEXT UNIQUE NOT NULL CHECK(length(user_name) <= 32),"
         "user_salt TEXT UNIQUE NOT NULL CHECK(length(user_salt) <= 32),"
-        "user_passhash TEXT UNIQUE NOT NULL CHECK(length(user_passhash) <= 64),"
+        "user_passhash TEXT UNIQUE NOT NULL CHECK(length(user_passhash) <= 40),"
         "user_timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"
         "user_visibility BOOLEAN NOT NULL DEFAULT 1,"
         "user_legalname TEXT CHECK(length(user_legalname) <= 64),"
@@ -21,6 +21,9 @@ int main()
         "user_description TEXT,"
         "user_permission TEXT NOT NULL DEFAULT 'BASE' CHECK(user_permission IN ('LOCK', 'BASE', 'SUPER', 'ADMIN'))"
 	);
+
+    std::string salt = PasswordSecurity::generateSalt();
+    std::cout << PasswordSecurity::hashPassword("password", salt);
 
 
 }
