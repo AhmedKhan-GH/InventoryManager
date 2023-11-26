@@ -9,10 +9,10 @@ int main()
 	database.createTableIfNotExists
 	(
 		"Users",
-		"user_id INTEGER PRIMARY KEY AUTOINCREMENT,"
-		"user_name TEXT UNIQUE NOT NULL CHECK(length(user_name) <= 32),"
-		"user_age INTEGER UNIQUE NOT NULL,"
-		"user_height REAL UNIQUE NOT NULL"
+        "user_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "user_name TEXT UNIQUE NOT NULL CHECK(length(user_name) <= 32)"
+		"user_age INT UNIQUE NOT NULL,
+		"user_height DOUBLE UNIQUE NOT NULL"
 	);
 
 	std::cout << "Successful creation of 'Users' table." << std::endl;
@@ -27,8 +27,5 @@ int main()
 	database.executePrepared();
 
 	std::cout << "Successful insertion of user into table" << std::endl;
-
-	//statically typed binding functions won't accept incorrect data types, 
-	//presumably compiler won't allow null parameters, and empty string and 0 are treated as such
 
 }

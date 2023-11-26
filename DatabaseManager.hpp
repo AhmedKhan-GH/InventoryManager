@@ -34,6 +34,7 @@ public:
         std::string create_table_sql = "CREATE TABLE IF NOT EXISTS " + table_name + " (" + table_schema + ");";
         executeQuery(create_table_sql);
     }
+
     /// <summary>
     /// Executes an SQL query on the database.
     /// </summary>
