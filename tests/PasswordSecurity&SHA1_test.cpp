@@ -3,7 +3,6 @@
 
 int main()
 {
-    
     std::string correct_password = "TestPassword";
     std::cout << "Predefined correct test password: " << correct_password << std::endl;
 
@@ -42,10 +41,4 @@ int main()
     {
         std::cout << "This password is incorrect" << std::endl;
     }
-
-   
-
- 
-
-
 }
