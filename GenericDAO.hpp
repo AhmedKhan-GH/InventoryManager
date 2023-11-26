@@ -1,3 +1,5 @@
+/*
+
 #ifndef GENERICDAO_HPP
 #define GENERICDAO_HPP
 
@@ -27,3 +29,5 @@ public:
 };
 
 #endif GENERICDAOE_HPP
+
+*/
