@@ -6,7 +6,7 @@
 class SHA1 {
 public:
     static std::string hash(const std::string& input) {
-        std::vector<uint32_t> hashBuffer = {
+        std::vector<uint32_t> hash_buffer = {
             0x67452301,
             0xEFCDAB89,
             0x98BADCFE,
@@ -15,10 +15,10 @@ public:
         };
 
         std::string padded = pad(input);
-        processChunks(padded, hashBuffer);
+        processChunks(padded, hash_buffer);
 
         std::stringstream ss;
-        for (uint32_t i : hashBuffer) {
+        for (uint32_t i : hash_buffer) {
             ss << std::hex << i;
         }
 
@@ -41,7 +41,7 @@ private:
         return padded;
     }
 
-    static void processChunks(const std::string& padded, std::vector<uint32_t>& hashBuffer) {
+    static void processChunks(const std::string& padded, std::vector<uint32_t>& hash_buffer) {
         size_t numChunks = padded.length() * 8 / 512;
 
         for (size_t i = 0; i < numChunks; ++i) {
@@ -57,11 +57,11 @@ private:
                 w[j] = leftRotate(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
             }
 
-            uint32_t a = hashBuffer[0];
-            uint32_t b = hashBuffer[1];
-            uint32_t c = hashBuffer[2];
-            uint32_t d = hashBuffer[3];
-            uint32_t e = hashBuffer[4];
+            uint32_t a = hash_buffer[0];
+            uint32_t b = hash_buffer[1];
+            uint32_t c = hash_buffer[2];
+            uint32_t d = hash_buffer[3];
+            uint32_t e = hash_buffer[4];
 
             for (int j = 0; j < 80; ++j) {
                 uint32_t f, k;
@@ -90,11 +90,11 @@ private:
                 a = temp;
             }
 
-            hashBuffer[0] += a;
-            hashBuffer[1] += b;
-            hashBuffer[2] += c;
-            hashBuffer[3] += d;
-            hashBuffer[4] += e;
+            hash_buffer[0] += a;
+            hash_buffer[1] += b;
+            hash_buffer[2] += c;
+            hash_buffer[3] += d;
+            hash_buffer[4] += e;
         }
     }
 

@@ -4,7 +4,13 @@
 
 class PasswordSecurity {
 public:
-    static std::string generateSalt(size_t length = 16) {
+    /// <summary>
+    /// generates a randomized string of specified length
+    /// </summary>
+    /// <param name="length">specification of length, default 8</param>
+    /// <returns>returns a string</returns>
+    static std::string generate_salt(size_t length = 8) 
+    {
         const char* alphanum =
             "0123456789"
             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -14,18 +20,28 @@ public:
         std::mt19937 generator(std::random_device{}());
         std::uniform_int_distribution<size_t> distribution(0, strlen(alphanum) - 1);
 
-        for (size_t i = 0; i < length; ++i) {
-            salt += alphanum[distribution(generator)];
-        }
-
+        for (size_t i = 0; i < length; ++i){salt += alphanum[distribution(generator)];}
         return salt;
     }
-
-    static std::string hashPassword(const std::string& password, const std::string& salt) {
-        return SHA1::hash(salt + password);
+    
+    /// <summary>
+    /// performs a SHA1 encryption of a given password salt combination
+    /// </summary>
+    /// <param name="string">the string to be hashed</param>
+    /// <returns>a 40 char hash</returns>
+    static std::string hash_password(const std::string& password, const std::string& salt) {
+        return SHA1::hash(password + salt);
     }
 
-    static bool validatePassword(const std::string& hashed, const std::string& password, const std::string& salt) {
-        return hashed == hashPassword(password, salt);
+    /// <summary>
+    /// validates a given entry and its respective salt to a hash
+    /// </summary>
+    /// <param name="hashed"></param>
+    /// <param name="password"></param>
+    /// <param name="salt"></param>
+    /// <returns></returns>
+    static bool validate_password(const std::string& hashed, const std::string& password, const std::string& salt) {
+        if(hashed == hash_password(password, salt)){return true;}
+        else{return false;}
     }
 };
