@@ -15,7 +15,7 @@ public:
             throw std::runtime_error(error_message);
         }
     }
-
+    
     ~DatabaseManager() {
         sqlite3_close(database_connection);
     }
@@ -30,7 +30,6 @@ public:
         if (sqlite3_exec(database_connection, query.c_str(), nullptr, nullptr, &error_message) != SQLITE_OK) {
             std::string error = "Error in executeQuery: ";
             error += error_message;
-            std::cout << error;
             sqlite3_free(error_message);
             throw std::runtime_error(error);
         }
@@ -44,19 +43,19 @@ public:
         }
     }
 
-    void bindParameter(int paramIndex, const std::string& value) {
+    void bindString(int paramIndex, const std::string& value) {
         if (sqlite3_bind_text(prepared_statement, paramIndex, value.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
             throw std::runtime_error(sqlite3_errmsg(database_connection));
         }
     }
 
-    void bindParameter(int paramIndex, int value) {
+    void bindInt(int paramIndex, int value) {
         if (sqlite3_bind_int(prepared_statement, paramIndex, value) != SQLITE_OK) {
             throw std::runtime_error(sqlite3_errmsg(database_connection));
         }
     }
 
-    void bindParameter(int paramIndex, double value) {
+    void bindDouble(int paramIndex, double value) {
         if (sqlite3_bind_double(prepared_statement, paramIndex, value) != SQLITE_OK) {
             throw std::runtime_error(sqlite3_errmsg(database_connection));
         }
@@ -67,6 +66,10 @@ public:
             throw std::runtime_error(sqlite3_errmsg(database_connection));
         }
         sqlite3_finalize(prepared_statement);
+    }
+
+    sqlite3_stmt* getPreparedStatement() {
+        return prepared_statement;
     }
 
 private:

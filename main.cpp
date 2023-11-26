@@ -22,6 +22,8 @@ int main()
         "user_permission TEXT NOT NULL DEFAULT 'BASE' CHECK(user_permission IN ('LOCK', 'BASE', 'SUPER', 'ADMIN'))"
 	);
 
+    //create login log table
+
     std::string salt = PasswordSecurity::generateSalt();
     std::cout << PasswordSecurity::hashPassword("password", salt);
 
