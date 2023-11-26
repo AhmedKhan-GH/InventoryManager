@@ -1,7 +1,17 @@
+#ifndef PASSWORDSECURITY_HPP
+#define PASSWORDSECURITY_HPP
+
 #include <string>
 #include <random>
 #include "SHA1.hpp"
 
+/// <summary>
+/// handles basic salt generation, password hashing
+/// and password validation with an existing hash
+/// 
+/// @author: Ahmed Khan
+/// @date: 11/25/23
+/// </summary>
 class PasswordSecurity {
 public:
     /// <summary>
@@ -45,3 +55,5 @@ public:
         else{return false;}
     }
 };
+
+#endif //PASSWORDSECURITY_HPP

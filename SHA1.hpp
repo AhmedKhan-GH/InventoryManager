@@ -1,8 +1,16 @@
+#ifndef SHA1_HPP
+#define SHA1_HPP
+
 #include <iostream>
 #include <string>
 #include <sstream>
 #include <vector>
 
+/// <summary>
+/// provides a 40 character Secure Hashing Algorithm 1 hash
+/// @date: 11/26/23
+/// @author: ChatGPT
+/// </summary>
 class SHA1 {
 public:
     static std::string hash(const std::string& input) {
@@ -102,3 +110,5 @@ private:
         return (value << count) | (value >> (32 - count));
     }
 };
+
+#endif //SHA1_HPP
