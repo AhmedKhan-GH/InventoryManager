@@ -1,10 +1,22 @@
+
 #ifndef DATABASEMANAGER_HPP
 #define DATABASEMANAGER_HPP
+
 
 #include "sqlite3.h"
 #include <string>
 #include <stdexcept>
 #include <iostream>
+#include <map>
+
+
+enum DataType
+{
+    INTEGER,
+    REAL,
+    TEXT,
+    // Add other data types as needed
+};
 
 /// <summary>
 /// Base level sqlite3 interface class
@@ -13,7 +25,7 @@
 /// </summary>
 class DatabaseManager {
 public:
-    DatabaseManager(const std::string& _database_path) : database_path(_database_path) {
+    DatabaseManager(const std::string& _database_path) : database_path(_database_path), statement_error(false) {
         if (sqlite3_open(database_path.c_str(), &database_connection) != SQLITE_OK) {
             std::cerr << "Failed to open database: " << sqlite3_errmsg(database_connection) << std::endl;
             exit(EXIT_FAILURE);
@@ -54,71 +66,73 @@ public:
     /// </summary>
     /// <param name="sql">The SQL statement to be prepared.</param>
     /// <returns>True if preparation is successful, false otherwise.</returns>
-    bool prepareStatement(const std::string& sql) {
+    bool prepareStatement(const std::string& sql, std::map<int, DataType>& _parameter_indices) {
+        statement_error = false;
         if (sqlite3_prepare_v2(database_connection, sql.c_str(), -1, &prepared_statement, nullptr) != SQLITE_OK) {
             std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(database_connection) << std::endl;
+            statement_error = true;
             return false;
         }
+
+        parameter_indices = _parameter_indices;
+
         return true;
     }
 
     /// <summary>
     /// Binds a string value to a parameter in a prepared SQL statement.
     /// </summary>
-    /// <param name="paramIndex">The index of the parameter to bind.</param>
+    /// <param name="param_index">The index of the parameter to bind.</param>
     /// <param name="value">The string value to bind.</param>
     /// <returns>True if binding is successful, false otherwise.</returns>
-    bool bindString(int paramIndex, const std::string& value) {
-        if (sqlite3_bind_text(prepared_statement, paramIndex, value.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
-            std::cerr << "Error in bindString: " << sqlite3_errmsg(database_connection) << std::endl;
-            sqlite3_finalize(prepared_statement); // Finalize the prepared statement to clear error state
-            return false;
-        }
-        return true;
+    bool bindString(int param_index, const std::string& value) {
+        return bindParameter<std::string>(param_index, value, DataType::TEXT);
     }
 
     /// <summary>
     /// Binds an integer value to a parameter in a prepared SQL statement.
     /// </summary>
-    /// <param name="paramIndex">The index of the parameter to bind.</param>
+    /// <param name="param_index">The index of the parameter to bind.</param>
     /// <param name="value">The integer value to bind.</param>
     /// <returns>True if binding is successful, false otherwise.</returns>
-    bool bindInt(int paramIndex, int value) {
-        if (sqlite3_bind_int(prepared_statement, paramIndex, value) != SQLITE_OK) {
-            std::cerr << "Error in bindInt: " << sqlite3_errmsg(database_connection) << std::endl;
-            sqlite3_finalize(prepared_statement); // Finalize the prepared statement to clear error state
-            return false;
-        }
-        return true;
+    bool bindInt(int param_index, const int value) {
+        return bindParameter<int>(param_index, value, DataType::INTEGER);
     }
 
     /// <summary>
     /// Binds a double value to a parameter in a prepared SQL statement.
     /// </summary>
-    /// <param name="paramIndex">The index of the parameter to bind.</param>
+    /// <param name="param_index">The index of the parameter to bind.</param>
     /// <param name="value">The double value to bind.</param>
     /// <returns>True if binding is successful, false otherwise.</returns>
-    bool bindDouble(int paramIndex, double value) {
-        if (sqlite3_bind_double(prepared_statement, paramIndex, value) != SQLITE_OK) {
-            std::cerr << "Error in bindDouble: " << sqlite3_errmsg(database_connection) << std::endl;
-            sqlite3_finalize(prepared_statement); // Finalize the prepared statement to clear error state
-            return false;
-        }
-        return true;
+    bool bindDouble(int param_index, const double value) {
+        return bindParameter<double>(param_index, value, DataType::REAL);
     }
-
 
     /// <summary>
     /// Executes a prepared SQL statement.
     /// </summary>
     /// <returns>True if execution is successful, false otherwise.</returns>
     bool executePrepared() {
+        if (statement_error == true)
+        {
+            std::cerr << "Error in executePrepared: previous error prevents futher modification" << std::endl;
+            sqlite3_finalize(prepared_statement);
+            parameter_indices.clear();
+            statement_error = false;
+            return false;
+        }
         if (sqlite3_step(prepared_statement) != SQLITE_DONE) {
             std::cerr << "Error in executePrepared: " << sqlite3_errmsg(database_connection) << std::endl;
             sqlite3_finalize(prepared_statement);
+            parameter_indices.clear();
+            statement_error = false;
             return false;
         }
+        //successful execution of prepared statement
         sqlite3_finalize(prepared_statement);
+        parameter_indices.clear();
+        statement_error = false;
         return true;
     }
 
@@ -131,9 +145,89 @@ public:
     }
 
 private:
+
+    /// <summary>
+    /// Binds a parameter in a prepared SQL statement to a specified value of type T.
+    /// </summary>
+    /// <typeparam name="T">The data type of the value to be bound (e.g., int, double, std::string).</typeparam>
+    /// <param name="param_index">The index of the parameter to bind.</param>
+    /// <param name="value">The value to bind to the parameter.</param>
+    /// <param name="data_type">The expected data type of the parameter.</param>
+    /// <returns>True if binding is successful, false otherwise.</returns>
+    template <typename T>
+    bool bindParameter(int param_index, const T& value, DataType data_type) {
+        
+        if (statement_error == true)
+        {
+            std::cerr << "Error in bindParameter: previous error prevents futher modification" << std::endl;
+            return false;
+        }
+
+        if (!checkParameterIndex(param_index, data_type)) {
+            return false;
+        }
+
+        int result = SQLITE_OK;
+
+        if constexpr (std::is_same_v<T, std::string>) {
+            result = sqlite3_bind_text(prepared_statement, param_index, value.c_str(), -1, SQLITE_TRANSIENT);
+        }
+        else if constexpr (std::is_same_v<T, int>) {
+            result = sqlite3_bind_int(prepared_statement, param_index, value);
+        }
+        else if constexpr (std::is_same_v<T, double>) {
+            result = sqlite3_bind_double(prepared_statement, param_index, value);
+        }
+        else {
+            std::cerr << "Error: Unsupported data type" << std::endl;
+            statement_error = true;
+            return false;
+        }
+
+        if (result != SQLITE_OK) {
+            statement_error = true;
+            return false;
+        }
+
+        statement_error = false;
+        return true;
+    }
+
+    /// <summary>
+    /// Checks if a parameter at the specified index matches the expected data type.
+    /// </summary>
+    /// <param name="param_index">The index of the parameter to check.</param>
+    /// <param name="expectedType">The expected data type of the parameter.</param>
+    /// <returns>True if the parameter matches the expected type, false otherwise.</returns>
+    bool checkParameterIndex(int param_index, DataType expectedType) {
+        if (statement_error == true)
+        {
+            std::cerr << "Error: previous error prevents futher modification" << std::endl;
+            return false;
+        }
+
+        if (parameter_indices.find(param_index) == parameter_indices.end()) {
+            std::cerr << "Error: Parameter index " << param_index << " not found in the parameter_indices map." << std::endl;
+            statement_error = true;
+            return false;
+        }
+
+        DataType actualType = parameter_indices[param_index];
+        if (actualType != expectedType) {
+            std::cerr << "Error: Parameter at index " << param_index << " is not of the expected data type." << std::endl;
+            statement_error = true;
+            return false;
+        }
+
+        return true;
+    }
+
+    bool statement_error;
+    std::map<int, DataType> parameter_indices;
     sqlite3* database_connection = nullptr;
     sqlite3_stmt* prepared_statement = nullptr;
     std::string database_path;
 };
+
 
 #endif //DATABASEMANAGER_HPP
