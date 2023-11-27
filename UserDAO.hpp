@@ -12,50 +12,70 @@ class UserDAO : public GenericDAO {
 public:
     UserDAO(DatabaseManager* db_manager) : db_manager(db_manager) {}
 
-    bool insertRecord(const nlohmann::json& json_data) {
-        try {
-            int         user_id             = json_data["user_id"].get<int>();
-            std::string user_name           = json_data["user_name"];
-            std::string user_salt           = json_data["user_salt"];
-            std::string user_passhash       = json_data["user_passhash"];
-            int         user_timestamp      = json_data["user_timestamp"].get<int>();
-            int         user_visibility     = json_data["user_visibility"].get<int>();
-            std::string user_legalname      = json_data.value("user_legalname", "");
-            std::string user_phonenumber    = json_data.value("user_phonenumber", "");
-            std::string user_emailaddress   = json_data.value("user_emailaddress", "");
-            std::string user_description    = json_data.value("user_description", "");
-            std::string user_permission     = json_data.value("user_permission", "BASE");
+    bool validateJsonFields(const nlohmann::json& json_data) {
+        const std::vector<std::pair<std::string, nlohmann::json::value_t>> requiredFields = {
+            {"user_name", nlohmann::json::value_t::string},
+            {"user_salt", nlohmann::json::value_t::string},
+            {"user_passhash", nlohmann::json::value_t::string},
+        };
 
-            std::string sql = "INSERT INTO Users (user_name, user_salt, user_passhash, user_legalname, "
-                "user_phonenumber, user_emailaddress, user_description, user_permission) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
-            db_manager->prepareStatement(sql);
+        for (const auto& field : requiredFields) {
+            if (!json_data.contains(field.first) || json_data[field.first].type() != field.second) {
+                std::cerr << "Error: Missing or incorrect JSON field: " << field.first << std::endl;
+                return false;
+            }
+        }
 
-            db_manager->bindInt     (1, user_id);             // user_id is an integer
-            db_manager->bindString  (2, user_name);           // user_name is a string
-            db_manager->bindString  (3, user_salt);           // user_salt is a string
-            db_manager->bindString  (4, user_passhash);       // user_passhash is a string
-            db_manager->bindInt     (5, user_visibility);     // user_visibility is an integer (treated as boolean)
-            db_manager->bindInt     (6, user_timestamp);      // user_timestamp is an integer
-            db_manager->bindString  (7, user_legalname);      // user_legalname is a string
-            db_manager->bindString  (8, user_phonenumber);    // user_phonenumber is a string
-            db_manager->bindString  (9, user_emailaddress);   // user_emailaddress is a string
-            db_manager->bindString  (10, user_description);   // user_description is a string
-            db_manager->bindString  (11, user_permission);    // user_permission is a string
-
-            db_manager->executePrepared();
-            return true;
-        }
-        catch (const std::runtime_error& e) {
-            std::cerr << "Error inserting user: " << e.what() << std::endl;
-        }
-        catch (const nlohmann::json::exception& e) {
-            std::cerr << "JSON error: " << e.what() << std::endl;
-        }
-        return false;
+        return true;
     }
 
+    bool insertRecord(const nlohmann::json& json_data)
+    {
+        std::string insert_sql = "INSERT INTO Users (user_name, user_salt, user_passhash, "
+            "user_legalname, user_phonenumber, user_emailaddress, user_description) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?);";
+
+        std::map<int, DataType> insert_parameters =
+        {
+            {1, DataType::TEXT},
+            {2, DataType::TEXT},
+            {3, DataType::TEXT},
+            {4, DataType::TEXT},
+            {5, DataType::TEXT},
+            {6, DataType::TEXT},
+            {7, DataType::TEXT}
+        };
+
+        std::string user_name = json_data["user_name"];
+        std::string user_salt = json_data["user_salt"];
+        std::string user_passhash = json_data["user_passhash"];
+        std::string user_legalname = json_data.value("user_legalname", "");
+        std::string user_phonenumber = json_data.value("user_phonenumber", "");
+        std::string user_emailaddress = json_data.value("user_emailaddress", "");
+        std::string user_description = json_data.value("user_description", "");
+
+        db_manager->prepareStatement(insert_sql, insert_parameters);
+
+        db_manager->bindString  (1, user_name);           // user_name is a string
+        db_manager->bindString  (2, user_salt);           // user_salt is a string
+        db_manager->bindString  (3, user_passhash);       // user_passhash is a string
+        db_manager->bindString  (4, user_legalname);      // user_legalname is a string
+        db_manager->bindString  (5, user_phonenumber);    // user_phonenumber is a string
+        db_manager->bindString  (6, user_emailaddress);   // user_emailaddress is a string
+        db_manager->bindString  (7, user_description);   // user_description is a string
+
+
+        if (!db_manager->executePrepared())
+        {
+            std::cerr << "Error inserting user." << std::endl;
+            return false;
+        }
+
+        return true;
+    }
+    
     nlohmann::json selectRecordById(int id) {
+       /*
         try {
             std::string sql = "SELECT * FROM Users WHERE user_id = ?;";
             db_manager->prepareStatement(sql);
@@ -87,6 +107,7 @@ public:
             std::cerr << "Error selecting user: " << e.what() << std::endl;
             throw;
         }
+        */
     }
 
     std::string getStringFromColumn(int columnIndex) {
@@ -153,15 +174,14 @@ public:
     }
 
     void deleteRecordById(int id) override {
-        try {
-            std::string sql = "DELETE FROM Users WHERE user_id = ?;";
-            db_manager->prepareStatement(sql);
-            db_manager->bindInt(1, id);
-            db_manager->executePrepared();
-        }
-        catch (const std::runtime_error& e) {
-            std::cerr << "Error deleting user: " << e.what() << std::endl;
-            throw;
+        std::string delete_sql = "DELETE FROM Users WHERE user_id = ?;";
+        std::map<int, DataType> delete_parameter = { { 1, DataType::INTEGER } };
+
+        db_manager->prepareStatement(delete_sql, delete_parameter);
+        db_manager->bindInt(1, id);
+        if (!db_manager->executePrepared())
+        {
+            std::cerr << "Error deleting user." << std::endl;
         }
     }
 

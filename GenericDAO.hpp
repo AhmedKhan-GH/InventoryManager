@@ -25,6 +25,7 @@ public:
 
     // Delete a record by its ID
     virtual void deleteRecordById(int id) = 0;
+    virtual bool validateJsonFields(const nlohmann::json& json_data) = 0;
 };
 
 #endif GENERICDAOE_HPP
