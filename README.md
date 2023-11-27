@@ -1,4 +1,4 @@
-# InventoryManager
+# Inventory Manager
 
 ```
 SQLite database with C++ logic and wxWidgets interface for management of non-salable permanent possessions in personal and business environments

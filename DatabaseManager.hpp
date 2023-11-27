@@ -1,7 +1,7 @@
 
 #ifndef DATABASEMANAGER_HPP
 #define DATABASEMANAGER_HPP
-
+#include "Enums.hpp"
 
 #include "sqlite3.h"
 #include <string>
@@ -10,13 +10,6 @@
 #include <map>
 
 
-enum DataType
-{
-    INTEGER,
-    REAL,
-    TEXT,
-    // Add other data types as needed
-};
 
 /// <summary>
 /// Base level sqlite3 interface class
@@ -25,6 +18,15 @@ enum DataType
 /// </summary>
 class DatabaseManager {
 public:
+
+    enum class DataType
+    {
+        INTEGER,
+        REAL,
+        TEXT,
+        // Add other data types as needed
+    };
+
     DatabaseManager(const std::string& _database_path) : database_path(_database_path), statement_error(false) {
         if (sqlite3_open(database_path.c_str(), &database_connection) != SQLITE_OK) {
             std::cerr << "Failed to open database: " << sqlite3_errmsg(database_connection) << std::endl;
@@ -110,6 +112,28 @@ public:
     }
 
     /// <summary>
+    /// Binds a NULL value to a parameter in a prepared SQL statement.
+    /// </summary>
+    /// <param name="param_index">The index of the parameter to bind.</param>
+    /// <returns>True if binding is successful, false otherwise.</returns>
+    bool bindNull(int param_index) {
+        if (statement_error) {
+            std::cerr << "Error in bindNull: previous error prevents further modification" << std::endl;
+            return false;
+        }
+
+        int result = sqlite3_bind_null(prepared_statement, param_index);
+        if (result != SQLITE_OK) {
+            std::cerr << "Error binding NULL to parameter index " << param_index << ": " << sqlite3_errmsg(database_connection) << std::endl;
+            statement_error = true;
+            return false;
+        }
+
+        return true;
+    }
+
+    
+    /// <summary>
     /// Executes a prepared SQL statement.
     /// </summary>
     /// <returns>True if execution is successful, false otherwise.</returns>
@@ -117,14 +141,14 @@ public:
         if (statement_error == true)
         {
             std::cerr << "Error in executePrepared: previous error prevents futher modification" << std::endl;
-            sqlite3_finalize(prepared_statement);
+            sqlite3_reset(prepared_statement);
             parameter_indices.clear();
             statement_error = false;
             return false;
         }
         if (sqlite3_step(prepared_statement) != SQLITE_DONE) {
             std::cerr << "Error in executePrepared: " << sqlite3_errmsg(database_connection) << std::endl;
-            sqlite3_finalize(prepared_statement);
+            sqlite3_reset(prepared_statement);
             parameter_indices.clear();
             statement_error = false;
             return false;
@@ -145,7 +169,6 @@ public:
     }
 
 private:
-
     /// <summary>
     /// Binds a parameter in a prepared SQL statement to a specified value of type T.
     /// </summary>
@@ -155,7 +178,7 @@ private:
     /// <param name="data_type">The expected data type of the parameter.</param>
     /// <returns>True if binding is successful, false otherwise.</returns>
     template <typename T>
-    bool bindParameter(int param_index, const T& value, DataType data_type) {
+    bool bindParameter(int param_index, const T& value, DataType expected_type) {
         
         if (statement_error == true)
         {
@@ -163,7 +186,7 @@ private:
             return false;
         }
 
-        if (!checkParameterIndex(param_index, data_type)) {
+        if (!checkParameterIndex(param_index, expected_type)) {
             return false;
         }
 
@@ -192,7 +215,7 @@ private:
         statement_error = false;
         return true;
     }
-
+  
     /// <summary>
     /// Checks if a parameter at the specified index matches the expected data type.
     /// </summary>
@@ -227,6 +250,8 @@ private:
     sqlite3* database_connection = nullptr;
     sqlite3_stmt* prepared_statement = nullptr;
     std::string database_path;
+    friend class GenericDAO;
+
 };
 
 

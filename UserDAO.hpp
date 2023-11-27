@@ -7,75 +7,84 @@
 #include <string>
 #include <stdexcept>
 #include "nlohmann\\json.hpp"
+#include <chrono>
 
 class UserDAO : public GenericDAO {
 public:
-    UserDAO(DatabaseManager* db_manager) : db_manager(db_manager) {}
 
-    bool validateJsonFields(const nlohmann::json& json_data) {
-        const std::vector<std::pair<std::string, nlohmann::json::value_t>> requiredFields = {
-            {"user_name", nlohmann::json::value_t::string},
-            {"user_salt", nlohmann::json::value_t::string},
-            {"user_passhash", nlohmann::json::value_t::string},
-        };
+    enum class UserPermission
+    {
+        LOCK,
+        BASE,
+        SUPER,
+        ADMIN
+    };
 
-        for (const auto& field : requiredFields) {
-            if (!json_data.contains(field.first) || json_data[field.first].type() != field.second) {
-                std::cerr << "Error: Missing or incorrect JSON field: " << field.first << std::endl;
-                return false;
-            }
-        }
-
-        return true;
-    }
+    UserDAO(DatabaseManager &db_manager) : GenericDAO(&db_manager) {}
 
     bool insertRecord(const nlohmann::json& json_data)
     {
-        std::string insert_sql = "INSERT INTO Users (user_name, user_salt, user_passhash, "
-            "user_legalname, user_phonenumber, user_emailaddress, user_description) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?);";
-
-        std::map<int, DataType> insert_parameters =
+        const std::map<std::string, nlohmann::json::value_t> required_fields = 
         {
-            {1, DataType::TEXT},
-            {2, DataType::TEXT},
-            {3, DataType::TEXT},
-            {4, DataType::TEXT},
-            {5, DataType::TEXT},
-            {6, DataType::TEXT},
-            {7, DataType::TEXT}
+            {"user_name", nlohmann::json::value_t::string},
+            {"user_salt", nlohmann::json::value_t::string},
+            {"user_passhash", nlohmann::json::value_t::string}
         };
 
-        std::string user_name = json_data["user_name"];
-        std::string user_salt = json_data["user_salt"];
-        std::string user_passhash = json_data["user_passhash"];
-        std::string user_legalname = json_data.value("user_legalname", "");
-        std::string user_phonenumber = json_data.value("user_phonenumber", "");
-        std::string user_emailaddress = json_data.value("user_emailaddress", "");
-        std::string user_description = json_data.value("user_description", "");
+        if (!GenericDAO::validateJsonFields(json_data, required_fields)) 
+        {
+            std::cerr << "Error in insertRecord: JSON entries invalid" << std::endl;
+            return false;
+        }
+
+        std::string insert_sql = 
+            "INSERT INTO Users (user_name, user_salt, user_passhash, user_legalname, user_phonenumber, "
+            "user_emailaddress, user_description, user_permission, user_visibility, user_timestamp) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+
+        std::map<int, DatabaseManager::DataType> insert_parameters =
+        {
+            {1, DatabaseManager::DataType::TEXT},    //user_name
+            {2, DatabaseManager::DataType::TEXT},    //user_salt
+            {3, DatabaseManager::DataType::TEXT},    //user_passhash
+            {4, DatabaseManager::DataType::TEXT},    //user_legalname
+            {5, DatabaseManager::DataType::TEXT},    //user_phonenumber
+            {6, DatabaseManager::DataType::TEXT},    //user_emailaddress
+            {7, DatabaseManager::DataType::TEXT},    //user_description
+            {8, DatabaseManager::DataType::INTEGER}, //user_permission
+            {9, DatabaseManager::DataType::INTEGER}, //user_visibility
+            {10, DatabaseManager::DataType::INTEGER} //user_timestamp
+
+        };
 
         db_manager->prepareStatement(insert_sql, insert_parameters);
 
-        db_manager->bindString  (1, user_name);           // user_name is a string
-        db_manager->bindString  (2, user_salt);           // user_salt is a string
-        db_manager->bindString  (3, user_passhash);       // user_passhash is a string
-        db_manager->bindString  (4, user_legalname);      // user_legalname is a string
-        db_manager->bindString  (5, user_phonenumber);    // user_phonenumber is a string
-        db_manager->bindString  (6, user_emailaddress);   // user_emailaddress is a string
-        db_manager->bindString  (7, user_description);   // user_description is a string
+        //required bindings already validated
+        bindRequiredString(1, "user_name", json_data);
+        bindRequiredString(2, "user_salt", json_data);
+        bindRequiredString(3, "user_passhash", json_data);
 
+        bindOptionalString(4, "user_legalname", json_data, std::nullopt);
+        bindOptionalString(5, "user_phonenumber", json_data, std::nullopt);
+        bindOptionalString(6, "user_emailaddress", json_data, std::nullopt);
+        bindOptionalString(7, "user_description", json_data, std::nullopt);
+
+        bindOptionalInt(8, "user_permission", json_data, 1);
+        bindOptionalInt(9, "user_visibility", json_data, 1);
+        bindOptionalInt(10, "user_timestamp", json_data, std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
         if (!db_manager->executePrepared())
         {
-            std::cerr << "Error inserting user." << std::endl;
+            std::cerr << "Error in insertRecord" << std::endl;
             return false;
         }
 
         return true;
     }
-    
+
+    /*
     nlohmann::json selectRecordById(int id) {
-       /*
+       
         try {
             std::string sql = "SELECT * FROM Users WHERE user_id = ?;";
             db_manager->prepareStatement(sql);
@@ -107,8 +116,9 @@ public:
             std::cerr << "Error selecting user: " << e.what() << std::endl;
             throw;
         }
-        */
+   
     }
+
 
     std::string getStringFromColumn(int columnIndex) {
         const unsigned char* text = sqlite3_column_text(db_manager->getPreparedStatement(), columnIndex);
@@ -172,10 +182,11 @@ public:
         db_manager->bindInt(2, id);
         db_manager->executePrepared();
     }
-
+    */
+    
     void deleteRecordById(int id) override {
         std::string delete_sql = "DELETE FROM Users WHERE user_id = ?;";
-        std::map<int, DataType> delete_parameter = { { 1, DataType::INTEGER } };
+        std::map<int, DatabaseManager::DataType> delete_parameter = { { 1, DatabaseManager::DataType::INTEGER } };
 
         db_manager->prepareStatement(delete_sql, delete_parameter);
         db_manager->bindInt(1, id);
@@ -184,9 +195,6 @@ public:
             std::cerr << "Error deleting user." << std::endl;
         }
     }
-
-private:
-    DatabaseManager* db_manager;
 };
 
 #endif // USERDAO_HPP
