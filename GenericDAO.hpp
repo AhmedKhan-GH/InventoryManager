@@ -26,7 +26,7 @@ protected:
     virtual bool insertRecord(const nlohmann::json& json_data) = 0;
 
     // Delete a record by its ID
-    virtual void deleteRecordById(int id) = 0;
+    virtual bool deleteRecordById(int id) = 0;
 
     void bindOptionalString(int bind_index, const std::string& key, const nlohmann::json& json_data, const std::optional<std::string>& default_value) {
         bindOptional<std::string>(json_data, key, bind_index, DatabaseManager::DataType::TEXT, default_value);

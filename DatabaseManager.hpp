@@ -1,7 +1,6 @@
 
 #ifndef DATABASEMANAGER_HPP
 #define DATABASEMANAGER_HPP
-#include "Enums.hpp"
 
 #include "sqlite3.h"
 #include <string>
@@ -38,21 +37,11 @@ public:
         sqlite3_close(database_connection);
     }
 
-    /// <summary>
-    /// Creates a database table if it does not already exist in the database.
-    /// EXITS PROGRAM IF GIVEN IMPROPER SCHEMA FORMATTING
-    /// </summary>
-    /// <param name="table_name">name of table</param>
-    /// <param name="table_schema">schema definition using sqlite3 formatting</param>
     void createTableIfNotExists(const std::string& table_name, const std::string& table_schema) {
         std::string create_table_sql = "CREATE TABLE IF NOT EXISTS " + table_name + " (" + table_schema + ");";
         executeQuery(create_table_sql);
     }
 
-    /// <summary>
-    /// Executes an SQL query on the database.
-    /// </summary>
-    /// <param name="query">The SQL query to be executed.</param>
     void executeQuery(const std::string& query) {
         char* error_message = nullptr;
         if (sqlite3_exec(database_connection, query.c_str(), nullptr, nullptr, &error_message) != SQLITE_OK) {
@@ -63,11 +52,6 @@ public:
         }
     }
 
-    /// <summary>
-    /// Prepares an SQL statement for execution.
-    /// </summary>
-    /// <param name="sql">The SQL statement to be prepared.</param>
-    /// <returns>True if preparation is successful, false otherwise.</returns>
     bool prepareStatement(const std::string& sql, std::map<int, DataType>& _parameter_indices) {
         statement_error = false;
         if (sqlite3_prepare_v2(database_connection, sql.c_str(), -1, &prepared_statement, nullptr) != SQLITE_OK) {
@@ -81,41 +65,18 @@ public:
         return true;
     }
 
-    /// <summary>
-    /// Binds a string value to a parameter in a prepared SQL statement.
-    /// </summary>
-    /// <param name="param_index">The index of the parameter to bind.</param>
-    /// <param name="value">The string value to bind.</param>
-    /// <returns>True if binding is successful, false otherwise.</returns>
     bool bindString(int param_index, const std::string& value) {
         return bindParameter<std::string>(param_index, value, DataType::TEXT);
     }
 
-    /// <summary>
-    /// Binds an integer value to a parameter in a prepared SQL statement.
-    /// </summary>
-    /// <param name="param_index">The index of the parameter to bind.</param>
-    /// <param name="value">The integer value to bind.</param>
-    /// <returns>True if binding is successful, false otherwise.</returns>
     bool bindInt(int param_index, const int value) {
         return bindParameter<int>(param_index, value, DataType::INTEGER);
     }
 
-    /// <summary>
-    /// Binds a double value to a parameter in a prepared SQL statement.
-    /// </summary>
-    /// <param name="param_index">The index of the parameter to bind.</param>
-    /// <param name="value">The double value to bind.</param>
-    /// <returns>True if binding is successful, false otherwise.</returns>
     bool bindDouble(int param_index, const double value) {
         return bindParameter<double>(param_index, value, DataType::REAL);
     }
 
-    /// <summary>
-    /// Binds a NULL value to a parameter in a prepared SQL statement.
-    /// </summary>
-    /// <param name="param_index">The index of the parameter to bind.</param>
-    /// <returns>True if binding is successful, false otherwise.</returns>
     bool bindNull(int param_index) {
         if (statement_error) {
             std::cerr << "Error in bindNull: previous error prevents further modification" << std::endl;
@@ -132,11 +93,6 @@ public:
         return true;
     }
 
-    
-    /// <summary>
-    /// Executes a prepared SQL statement.
-    /// </summary>
-    /// <returns>True if execution is successful, false otherwise.</returns>
     bool executePrepared() {
         if (statement_error == true)
         {
@@ -160,23 +116,12 @@ public:
         return true;
     }
 
-    /// <summary>
-    /// Gets the SQLite3 prepared statement that has been previously prepared.
-    /// </summary>
-    /// <returns>The SQLite3 prepared statement.</returns>
     sqlite3_stmt* getPreparedStatement() {
         return prepared_statement;
     }
 
 private:
-    /// <summary>
-    /// Binds a parameter in a prepared SQL statement to a specified value of type T.
-    /// </summary>
-    /// <typeparam name="T">The data type of the value to be bound (e.g., int, double, std::string).</typeparam>
-    /// <param name="param_index">The index of the parameter to bind.</param>
-    /// <param name="value">The value to bind to the parameter.</param>
-    /// <param name="data_type">The expected data type of the parameter.</param>
-    /// <returns>True if binding is successful, false otherwise.</returns>
+
     template <typename T>
     bool bindParameter(int param_index, const T& value, DataType expected_type) {
         
@@ -216,12 +161,6 @@ private:
         return true;
     }
   
-    /// <summary>
-    /// Checks if a parameter at the specified index matches the expected data type.
-    /// </summary>
-    /// <param name="param_index">The index of the parameter to check.</param>
-    /// <param name="expectedType">The expected data type of the parameter.</param>
-    /// <returns>True if the parameter matches the expected type, false otherwise.</returns>
     bool checkParameterIndex(int param_index, DataType expectedType) {
         if (statement_error == true)
         {

@@ -184,8 +184,29 @@ public:
     }
     */
     
-    void deleteRecordById(int id) override {
-        std::string delete_sql = "DELETE FROM Users WHERE user_id = ?;";
+    bool deleteRecordById(int id) override {
+        std::string sql = "UPDATE Users SET user_visibility = ? WHERE user_id = ?;";
+        std::map<int, DatabaseManager::DataType> parameter_indices = 
+        {
+            {1, DatabaseManager::DataType::INTEGER},
+            {2, DatabaseManager::DataType::INTEGER}
+        };
+        db_manager->prepareStatement(sql, parameter_indices);
+        db_manager->bindInt(1, 0);
+        db_manager->bindInt(2, id);
+        if(!db_manager->executePrepared())
+        {
+            std::cerr << "Error in deleteRecordById." << std::endl;
+            return false;
+        }
+        return true;
+    }
+};
+
+#endif // USERDAO_HPP
+
+/*
+   std::string delete_sql = "DELETE FROM Users WHERE user_id = ?;";
         std::map<int, DatabaseManager::DataType> delete_parameter = { { 1, DatabaseManager::DataType::INTEGER } };
 
         db_manager->prepareStatement(delete_sql, delete_parameter);
@@ -194,7 +215,4 @@ public:
         {
             std::cerr << "Error deleting user." << std::endl;
         }
-    }
-};
-
-#endif // USERDAO_HPP
+*/
