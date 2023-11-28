@@ -30,6 +30,12 @@ protected:
 
     virtual nlohmann::json retrieveRecordById(int id) = 0;
 
+    virtual bool updateRecordByID(int id) = 0;
+
+    //need queryFieldByID "get me the username of the user with this id"
+    //need existenceOfRecordByField (including id) "is there a user with this id or with this name etc"
+    //need 
+
     DatabaseManager* db_manager;
 
 };
