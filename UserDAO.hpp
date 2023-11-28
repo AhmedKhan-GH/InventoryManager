@@ -34,7 +34,7 @@ public:
         };
 
         //
-        if (!GenericDAO::validateJsonFields(json_data, required_fields))
+        if (!db_manager->validateJsonFields(json_data, required_fields))
         {
             std::cerr << "Error in insertRecord: JSON entries invalid" << std::endl;
             return false;
@@ -65,18 +65,18 @@ public:
         db_manager->prepareStatement(parameter_insert, parameter_types);
 
         //required bindings already validated
-        bindJsonRequiredString(1, "user_name", json_data);
-        bindJsonRequiredString(2, "user_salt", json_data);
-        bindJsonRequiredString(3, "user_passhash", json_data);
+        db_manager->bindJsonRequiredString(1, "user_name", json_data);
+        db_manager->bindJsonRequiredString(2, "user_salt", json_data);
+        db_manager->bindJsonRequiredString(3, "user_passhash", json_data);
 
-        bindJsonOptionalString(4, "user_legalname", json_data, std::nullopt);
-        bindJsonOptionalString(5, "user_phonenumber", json_data, std::nullopt);
-        bindJsonOptionalString(6, "user_emailaddress", json_data, std::nullopt);
-        bindJsonOptionalString(7, "user_description", json_data, std::nullopt);
+        db_manager->bindJsonOptionalString(4, "user_legalname", json_data, std::nullopt);
+        db_manager->bindJsonOptionalString(5, "user_phonenumber", json_data, std::nullopt);
+        db_manager->bindJsonOptionalString(6, "user_emailaddress", json_data, std::nullopt);
+        db_manager->bindJsonOptionalString(7, "user_description", json_data, std::nullopt);
 
-        bindJsonOptionalInt(8, "user_permission", json_data, 1);
-        bindJsonOptionalInt(9, "user_visibility", json_data, 1);
-        bindJsonOptionalInt(10, "user_timestamp", json_data, std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+        db_manager->bindJsonOptionalInt(8, "user_permission", json_data, 1);
+        db_manager->bindJsonOptionalInt(9, "user_visibility", json_data, 1);
+        db_manager->bindJsonOptionalInt(10, "user_timestamp", json_data, std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
         if (!db_manager->executePrepared())
         {
@@ -103,16 +103,16 @@ public:
 
         if (sqlite3_step(prepared_statement) == SQLITE_ROW) {
             // Assuming column indices are in order as per your table schema
-            getSelectString(1, prepared_statement, "user_name", json_result);
-            getSelectString(2, prepared_statement, "user_salt", json_result);
-            getSelectString(3, prepared_statement, "user_passhash", json_result);
-            getSelectString(4, prepared_statement, "user_legalname", json_result);
-            getSelectString(5, prepared_statement, "user_phonenumber", json_result);
-            getSelectString(6, prepared_statement, "user_emailaddress", json_result);
-            getSelectString(7, prepared_statement, "user_description", json_result);
-            getSelectInt(8, prepared_statement, "user_permission", json_result);
-            getSelectInt(9, prepared_statement, "user_visibility", json_result);
-            getSelectInt(10, prepared_statement, "user_timestamp", json_result);
+            db_manager->getSelectString(1, prepared_statement, "user_name", json_result);
+            db_manager->getSelectString(2, prepared_statement, "user_salt", json_result);
+            db_manager->getSelectString(3, prepared_statement, "user_passhash", json_result);
+            db_manager->getSelectString(4, prepared_statement, "user_legalname", json_result);
+            db_manager->getSelectString(5, prepared_statement, "user_phonenumber", json_result);
+            db_manager->getSelectString(6, prepared_statement, "user_emailaddress", json_result);
+            db_manager->getSelectString(7, prepared_statement, "user_description", json_result);
+            db_manager->getSelectInt(8, prepared_statement, "user_permission", json_result);
+            db_manager->getSelectInt(9, prepared_statement, "user_visibility", json_result);
+            db_manager->getSelectInt(10, prepared_statement, "user_timestamp", json_result);
         }
 
         return json_result;

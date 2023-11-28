@@ -9,8 +9,6 @@
 #include <map>
 #include "nlohmann\\json.hpp"
 
-
-
 /// <summary>
 /// Base level sqlite3 interface class
 /// @date: 11/26/23
@@ -66,8 +64,6 @@ public:
         return true;
     }
 
-
-
     bool bindString(int param_index, const std::string& value) {
         return bindParameter<std::string>(param_index, value, DataType::TEXT);
     }
@@ -78,9 +74,31 @@ public:
 
     bool bindDouble(int param_index, const double value) {
         return bindParameter<double>(param_index, value, DataType::REAL);
+    }    
+
+    void bindJsonOptionalString(int bind_index, const std::string& key, const nlohmann::json& json_data, const std::optional<std::string>& default_value) {
+        bindOptional<std::string>(json_data, key, bind_index, DataType::TEXT, default_value);
     }
 
-    
+    void bindJsonOptionalInt(int bind_index, const std::string& key, const nlohmann::json& json_data, const std::optional<int>& default_value) {
+        bindOptional<int>(json_data, key, bind_index, DataType::INTEGER, default_value);
+    }
+
+    void bindJsonOptionalDouble(int bind_index, const std::string& key, const nlohmann::json& json_data, const std::optional<double>& default_value) {
+        bindOptional<double>(json_data, key, bind_index, DataType::REAL, default_value);
+    }
+
+    void bindJsonRequiredString(int bind_index, const std::string& key, const nlohmann::json& json_data) {
+        bindParameter<std::string>(bind_index, json_data[key], DataType::TEXT);
+    }
+
+    void bindJsonRequiredInt(int bind_index, const std::string& key, const nlohmann::json& json_data) {
+        bindParameter<int>(bind_index, json_data[key], DataType::INTEGER);
+    }
+
+    void bindJsonRequiredDouble(int bind_index, const std::string& key, const nlohmann::json& json_data) {
+        bindParameter<double>(bind_index, json_data[key], DataType::REAL);
+    }
 
     bool bindNull(int param_index) {
         if (statement_error) {
@@ -118,6 +136,53 @@ public:
         sqlite3_finalize(prepared_statement);
         parameter_indices.clear();
         statement_error = false;
+        return true;
+    }
+
+    void getSelectString(int index, sqlite3_stmt* prepared_statement, std::string field, nlohmann::json& json_result)
+    {
+        std::optional<std::string> result = getSelectParameter<std::string>(prepared_statement, index);
+        if (result.has_value())
+        {
+            json_result[field] = result.value();
+        }
+        return;
+    }
+
+    void getSelectDouble(int index, sqlite3_stmt* prepared_statement, std::string field, nlohmann::json& json_result)
+    {
+        std::optional<double> result = getSelectParameter<double>(prepared_statement, index);
+        if (result.has_value())
+        {
+            json_result[field] = result.value();
+        }
+        return;
+    }
+
+    void getSelectInt(int index, sqlite3_stmt* prepared_statement, std::string field, nlohmann::json& json_result)
+    {
+        std::optional<int> result = getSelectParameter<int>(prepared_statement, index);
+        if (result.has_value())
+        {
+            json_result[field] = result.value();
+        }
+        return;
+    }
+
+    bool validateJsonFields
+    (
+        const nlohmann::json& json_data,
+        const std::map<std::string, nlohmann::json::value_t>& required_fields
+    )
+    {
+        for (const auto& field : required_fields)
+        {
+            if (!json_data.contains(field.first) || json_data[field.first].type() != field.second)
+            {
+                std::cerr << "Error in validateJsonFields: Missing or incorrect required JSON field: " << field.first << std::endl;
+                return false;
+            }
+        }
         return true;
     }
 
@@ -221,6 +286,25 @@ private:
 
         return true;
     }
+
+    template<typename T>
+    void bindOptional(const nlohmann::json& json_data, const std::string& key, int bind_index, DataType type, const std::optional<T>& default_value)
+    {
+        if (json_data.contains(key) && !json_data[key].is_null()) {
+            T value = json_data[key].get<T>();
+            bindParameter<T>(bind_index, value, type);
+            return; // Guard clause to exit early
+        }
+
+        if (default_value.has_value()) {
+            bindParameter<T>(bind_index, default_value.value(), type);
+            return; // Guard clause to exit early
+        }
+
+        bindNull(bind_index);
+
+    }
+
 
     bool statement_error;
     std::map<int, DataType> parameter_indices;
