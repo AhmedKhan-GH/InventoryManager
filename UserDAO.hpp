@@ -12,71 +12,32 @@
 class UserDAO : public GenericDAO {
 public:
 
-    enum class UserPermission
-    {
-        LOCK,
-        BASE,
-        SUPER,
-        ADMIN
-    };
-
     UserDAO(DatabaseManager &db_manager) : GenericDAO(&db_manager) {}
 
     //the C in CRUD
     bool insertRecord(const nlohmann::json& json_data)
     {
-        //encapsulate this map of strings and json value_t into a single RequiredFileds object that can be given a bracketized array of strings and custom enums
-        const std::map<std::string, nlohmann::json::value_t> required_fields =
-        {
-            {"user_name", nlohmann::json::value_t::string},
-            {"user_salt", nlohmann::json::value_t::string},
-            {"user_passhash", nlohmann::json::value_t::string}
-        };
-
-        //
-        if (!db_manager->validateJsonFields(json_data, required_fields))
-        {
-            std::cerr << "Error in insertRecord: JSON entries invalid" << std::endl;
-            return false;
-        }
-
         //sql query stays as normal
         std::string parameter_insert =
             "INSERT INTO Users (user_name, user_salt, user_passhash, user_legalname, user_phonenumber, "
             "user_emailaddress, user_description, user_permission, user_visibility, user_timestamp) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
-        //do the same encapsulation of map of int and DataType enums into a single object
-        std::map<int, DatabaseManager::DataType> parameter_types =
-        {
-            {1, DatabaseManager::DataType::TEXT},    //user_name
-            {2, DatabaseManager::DataType::TEXT},    //user_salt
-            {3, DatabaseManager::DataType::TEXT},    //user_passhash
-            {4, DatabaseManager::DataType::TEXT},    //user_legalname
-            {5, DatabaseManager::DataType::TEXT},    //user_phonenumber
-            {6, DatabaseManager::DataType::TEXT},    //user_emailaddress
-            {7, DatabaseManager::DataType::TEXT},    //user_description
-            {8, DatabaseManager::DataType::INTEGER}, //user_permission
-            {9, DatabaseManager::DataType::INTEGER}, //user_visibility
-            {10, DatabaseManager::DataType::INTEGER} //user_timestamp
-
-        };
-
-        db_manager->prepareStatement(parameter_insert, parameter_types);
+        db_manager->prepareStatement(parameter_insert);
 
         //required bindings already validated
-        db_manager->bindJsonRequiredString(1, "user_name", json_data);
-        db_manager->bindJsonRequiredString(2, "user_salt", json_data);
-        db_manager->bindJsonRequiredString(3, "user_passhash", json_data);
+        db_manager->bindParameter<std::string>(1, json_data["user_name"]);
+        db_manager->bindParameter<std::string>(2, json_data["user_salt"]);
+        db_manager->bindParameter<std::string>(3, json_data["user_passhash"]);
 
-        db_manager->bindJsonOptionalString(4, "user_legalname", json_data, std::nullopt);
-        db_manager->bindJsonOptionalString(5, "user_phonenumber", json_data, std::nullopt);
-        db_manager->bindJsonOptionalString(6, "user_emailaddress", json_data, std::nullopt);
-        db_manager->bindJsonOptionalString(7, "user_description", json_data, std::nullopt);
+        db_manager->bindOptional<std::string>(4, json_data, "user_legalname", std::nullopt);
+        db_manager->bindOptional<std::string>(5, json_data, "user_phonenumber", std::nullopt);
+        db_manager->bindOptional<std::string>(6, json_data, "user_emailaddress", std::nullopt);
+        db_manager->bindOptional<std::string>(7, json_data, "user_description", std::nullopt);
 
-        db_manager->bindJsonOptionalInt(8, "user_permission", json_data, 1);
-        db_manager->bindJsonOptionalInt(9, "user_visibility", json_data, 1);
-        db_manager->bindJsonOptionalInt(10, "user_timestamp", json_data, std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+        db_manager->bindOptional<int>(8, json_data, "user_permission", 1);
+        db_manager->bindOptional<int>(9, json_data, "user_visibility", 1);
+        db_manager->bindOptional<int>(10, json_data, "user_timestamp", std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
         if (!db_manager->executePrepared())
         {
@@ -92,32 +53,31 @@ public:
     nlohmann::json retrieveRecordById(int id) override
     {
         nlohmann::json json_result;
-        std::map<int, DatabaseManager::DataType> parameter_types =
-        {
-            {1, DatabaseManager::DataType::INTEGER}
-        };
+   
         std::string sql = "SELECT * FROM Users WHERE user_id = ?;";
-        db_manager->prepareStatement(sql, parameter_types);
-        db_manager->bindInt(1, id);
+        db_manager->prepareStatement(sql);
+        db_manager->bindParameter<int>(1, id);
         sqlite3_stmt* prepared_statement = db_manager->getPreparedStatement();
 
         if (sqlite3_step(prepared_statement) == SQLITE_ROW) {
             // Assuming column indices are in order as per your table schema
-            db_manager->getSelectString(1, prepared_statement, "user_name", json_result);
-            db_manager->getSelectString(2, prepared_statement, "user_salt", json_result);
-            db_manager->getSelectString(3, prepared_statement, "user_passhash", json_result);
-            db_manager->getSelectString(4, prepared_statement, "user_legalname", json_result);
-            db_manager->getSelectString(5, prepared_statement, "user_phonenumber", json_result);
-            db_manager->getSelectString(6, prepared_statement, "user_emailaddress", json_result);
-            db_manager->getSelectString(7, prepared_statement, "user_description", json_result);
-            db_manager->getSelectInt(8, prepared_statement, "user_permission", json_result);
-            db_manager->getSelectInt(9, prepared_statement, "user_visibility", json_result);
-            db_manager->getSelectInt(10, prepared_statement, "user_timestamp", json_result);
+
+            db_manager->getSelectAndAssign<std::string>(1, prepared_statement, "user_name", json_result);
+            db_manager->getSelectAndAssign<std::string>(2, prepared_statement, "user_salt", json_result);
+            db_manager->getSelectAndAssign<std::string>(3, prepared_statement, "user_passhash", json_result);
+            db_manager->getSelectAndAssign<std::string>(4, prepared_statement, "user_legalname", json_result);
+            db_manager->getSelectAndAssign<std::string>(5, prepared_statement, "user_phonenumber", json_result);
+            db_manager->getSelectAndAssign<std::string>(6, prepared_statement, "user_emailaddress", json_result);
+            db_manager->getSelectAndAssign<std::string>(7, prepared_statement, "user_description", json_result);
+
+            db_manager->getSelectAndAssign<int>(8, prepared_statement, "user_permission", json_result);
+            db_manager->getSelectAndAssign<int>(9, prepared_statement, "user_visibility", json_result);
+            db_manager->getSelectAndAssign<int>(10, prepared_statement, "user_timestamp", json_result);
         }
 
         return json_result;
     }
-    
+
 
     //U in CRUD, Update allowed paramters by ID
 
@@ -228,15 +188,10 @@ public:
     //D in CRUD
     bool deleteRecordById(int id) override {
         std::string sql = "UPDATE Users SET user_visibility = ? WHERE user_id = ?;";
-        std::map<int, DatabaseManager::DataType> parameter_indices = 
-        {
-            {1, DatabaseManager::DataType::INTEGER},
-            {2, DatabaseManager::DataType::INTEGER}
-        };
-        GenericDAO::db_manager->prepareStatement(sql, parameter_indices);
-        GenericDAO::db_manager->bindInt(1, 0);
-        GenericDAO::db_manager->bindInt(2, id);
-        if(!GenericDAO::db_manager->executePrepared())
+        db_manager->prepareStatement(sql);
+        db_manager->bindParameter<int>(1, 0);
+        db_manager->bindParameter<int>(2, id);
+        if(!db_manager->executePrepared())
         {
             std::cerr << "Error in deleteRecordById." << std::endl;
             return false;
