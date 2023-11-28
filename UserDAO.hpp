@@ -22,27 +22,32 @@ public:
 
     UserDAO(DatabaseManager &db_manager) : GenericDAO(&db_manager) {}
 
+    //the C in CRUD
     bool insertRecord(const nlohmann::json& json_data)
     {
-        const std::map<std::string, nlohmann::json::value_t> required_fields = 
+        //encapsulate this map of strings and json value_t into a single RequiredFileds object that can be given a bracketized array of strings and custom enums
+        const std::map<std::string, nlohmann::json::value_t> required_fields =
         {
             {"user_name", nlohmann::json::value_t::string},
             {"user_salt", nlohmann::json::value_t::string},
             {"user_passhash", nlohmann::json::value_t::string}
         };
 
-        if (!GenericDAO::validateJsonFields(json_data, required_fields)) 
+        //
+        if (!GenericDAO::validateJsonFields(json_data, required_fields))
         {
             std::cerr << "Error in insertRecord: JSON entries invalid" << std::endl;
             return false;
         }
 
-        std::string insert_sql = 
+        //sql query stays as normal
+        std::string parameter_insert =
             "INSERT INTO Users (user_name, user_salt, user_passhash, user_legalname, user_phonenumber, "
             "user_emailaddress, user_description, user_permission, user_visibility, user_timestamp) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
-        std::map<int, DatabaseManager::DataType> insert_parameters =
+        //do the same encapsulation of map of int and DataType enums into a single object
+        std::map<int, DatabaseManager::DataType> parameter_types =
         {
             {1, DatabaseManager::DataType::TEXT},    //user_name
             {2, DatabaseManager::DataType::TEXT},    //user_salt
@@ -57,21 +62,21 @@ public:
 
         };
 
-        db_manager->prepareStatement(insert_sql, insert_parameters);
+        db_manager->prepareStatement(parameter_insert, parameter_types);
 
         //required bindings already validated
-        bindRequiredString(1, "user_name", json_data);
-        bindRequiredString(2, "user_salt", json_data);
-        bindRequiredString(3, "user_passhash", json_data);
+        bindJsonRequiredString(1, "user_name", json_data);
+        bindJsonRequiredString(2, "user_salt", json_data);
+        bindJsonRequiredString(3, "user_passhash", json_data);
 
-        bindOptionalString(4, "user_legalname", json_data, std::nullopt);
-        bindOptionalString(5, "user_phonenumber", json_data, std::nullopt);
-        bindOptionalString(6, "user_emailaddress", json_data, std::nullopt);
-        bindOptionalString(7, "user_description", json_data, std::nullopt);
+        bindJsonOptionalString(4, "user_legalname", json_data, std::nullopt);
+        bindJsonOptionalString(5, "user_phonenumber", json_data, std::nullopt);
+        bindJsonOptionalString(6, "user_emailaddress", json_data, std::nullopt);
+        bindJsonOptionalString(7, "user_description", json_data, std::nullopt);
 
-        bindOptionalInt(8, "user_permission", json_data, 1);
-        bindOptionalInt(9, "user_visibility", json_data, 1);
-        bindOptionalInt(10, "user_timestamp", json_data, std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+        bindJsonOptionalInt(8, "user_permission", json_data, 1);
+        bindJsonOptionalInt(9, "user_visibility", json_data, 1);
+        bindJsonOptionalInt(10, "user_timestamp", json_data, std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
         if (!db_manager->executePrepared())
         {
@@ -81,6 +86,44 @@ public:
 
         return true;
     }
+
+    /*
+    //R in CRUD, Retrieve record by ID
+    bool retrieveRecordById(int id) override
+    {
+        nlohmann::json json_result;
+        std::map<int, DatabaseManager::DataType> parameter_types =
+        {
+            {1, DatabaseManager::DataType::INTEGER}
+        };
+        std::string sql = "SELECT * FROM Users WHERE user_id = ?;";
+        db_manager->prepareStatement(sql, parameter_types);
+        db_manager->bindInt(1, id);
+        auto prepared_statement = db_manager->getPreparedStatement();
+
+        if (sqlite3_step(prepared_statement) == SQLITE_ROW) {
+            // Assuming column indices are in order as per your table schema
+            json_result["user_id"] = sqlite3_column_int(prepared_statement, 0);
+            json_result["user_name"] = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, 1));
+            json_result["user_salt"] = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, 2));
+            json_result["user_passhash"] = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, 3));
+            json_result["user_legalname"] = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, 4));
+            json_result["user_phonenumber"] = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, 5));
+            json_result["user_emailaddress"] = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, 6));
+            json_result["user_description"] = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, 7));
+            json_result["user_permission"] = sqlite3_column_int(prepared_statement, 8);
+            json_result["user_visibility"] = sqlite3_column_int(prepared_statement, 9);
+            json_result["user_timestamp"] = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, 10));
+
+            return true;
+        }
+
+    }
+    */
+
+    //U in CRUD, Update allowed paramters by ID
+
+
 
     /*
     nlohmann::json selectRecordById(int id) {
@@ -184,6 +227,7 @@ public:
     }
     */
     
+    //D in CRUD
     bool deleteRecordById(int id) override {
         std::string sql = "UPDATE Users SET user_visibility = ? WHERE user_id = ?;";
         std::map<int, DatabaseManager::DataType> parameter_indices = 
@@ -191,10 +235,10 @@ public:
             {1, DatabaseManager::DataType::INTEGER},
             {2, DatabaseManager::DataType::INTEGER}
         };
-        db_manager->prepareStatement(sql, parameter_indices);
-        db_manager->bindInt(1, 0);
-        db_manager->bindInt(2, id);
-        if(!db_manager->executePrepared())
+        GenericDAO::db_manager->prepareStatement(sql, parameter_indices);
+        GenericDAO::db_manager->bindInt(1, 0);
+        GenericDAO::db_manager->bindInt(2, id);
+        if(!GenericDAO::db_manager->executePrepared())
         {
             std::cerr << "Error in deleteRecordById." << std::endl;
             return false;
