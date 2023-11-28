@@ -1,5 +1,6 @@
 #include "DatabaseManager.hpp"
 #include "PasswordSecurity.hpp"
+#include "UserDAO.hpp"
 #include <iostream>
 #include <map>
 
@@ -23,6 +24,7 @@ int main()
         "user_timestamp     DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP"
     );
 
+    /*
     database.createTableIfNotExists
     (
         "Logins",
@@ -32,5 +34,10 @@ int main()
         "login_success      BOOLEAN     NOT NULL        DEFAULT 0, "
         "login_timestamp    DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP"
     );
+    */
+
+    UserDAO user_query(database);
+    nlohmann::json user = user_query.retrieveRecordById(1);
+    std::cout << user.dump();
 
 }

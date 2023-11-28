@@ -87,9 +87,9 @@ public:
         return true;
     }
 
-    /*
+    
     //R in CRUD, Retrieve record by ID
-    bool retrieveRecordById(int id) override
+    nlohmann::json retrieveRecordById(int id) override
     {
         nlohmann::json json_result;
         std::map<int, DatabaseManager::DataType> parameter_types =
@@ -99,27 +99,25 @@ public:
         std::string sql = "SELECT * FROM Users WHERE user_id = ?;";
         db_manager->prepareStatement(sql, parameter_types);
         db_manager->bindInt(1, id);
-        auto prepared_statement = db_manager->getPreparedStatement();
+        sqlite3_stmt* prepared_statement = db_manager->getPreparedStatement();
 
         if (sqlite3_step(prepared_statement) == SQLITE_ROW) {
             // Assuming column indices are in order as per your table schema
-            json_result["user_id"] = sqlite3_column_int(prepared_statement, 0);
-            json_result["user_name"] = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, 1));
-            json_result["user_salt"] = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, 2));
-            json_result["user_passhash"] = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, 3));
-            json_result["user_legalname"] = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, 4));
-            json_result["user_phonenumber"] = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, 5));
-            json_result["user_emailaddress"] = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, 6));
-            json_result["user_description"] = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, 7));
-            json_result["user_permission"] = sqlite3_column_int(prepared_statement, 8);
-            json_result["user_visibility"] = sqlite3_column_int(prepared_statement, 9);
-            json_result["user_timestamp"] = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, 10));
-
-            return true;
+            getSelectString(1, prepared_statement, "user_name", json_result);
+            getSelectString(2, prepared_statement, "user_salt", json_result);
+            getSelectString(3, prepared_statement, "user_passhash", json_result);
+            getSelectString(4, prepared_statement, "user_legalname", json_result);
+            getSelectString(5, prepared_statement, "user_phonenumber", json_result);
+            getSelectString(6, prepared_statement, "user_emailaddress", json_result);
+            getSelectString(7, prepared_statement, "user_description", json_result);
+            getSelectInt(8, prepared_statement, "user_permission", json_result);
+            getSelectInt(9, prepared_statement, "user_visibility", json_result);
+            getSelectInt(10, prepared_statement, "user_timestamp", json_result);
         }
 
+        return json_result;
     }
-    */
+    
 
     //U in CRUD, Update allowed paramters by ID
 

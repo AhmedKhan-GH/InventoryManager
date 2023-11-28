@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <map>
+#include "nlohmann\\json.hpp"
 
 
 
@@ -65,6 +66,8 @@ public:
         return true;
     }
 
+
+
     bool bindString(int param_index, const std::string& value) {
         return bindParameter<std::string>(param_index, value, DataType::TEXT);
     }
@@ -76,6 +79,8 @@ public:
     bool bindDouble(int param_index, const double value) {
         return bindParameter<double>(param_index, value, DataType::REAL);
     }
+
+    
 
     bool bindNull(int param_index) {
         if (statement_error) {
@@ -121,6 +126,39 @@ public:
     }
 
 private:
+
+    template<typename T>
+    std::optional<T> getSelectParameter(sqlite3_stmt* prepared_statement, int columnIndex) {
+        std::cerr << "Error in getSelectParameter: unsupported type." << std::endl;
+        return std::nullopt; // Unsupported type
+    }
+
+    template<>
+    std::optional<int> getSelectParameter<int>(sqlite3_stmt* prepared_statement, int columnIndex) {
+        if (sqlite3_column_type(prepared_statement, columnIndex) == SQLITE_NULL) {
+            return std::nullopt;
+        }
+        return sqlite3_column_int(prepared_statement, columnIndex);
+    }
+
+    // Specialization for double
+    template<>
+    std::optional<double> getSelectParameter<double>(sqlite3_stmt* prepared_statement, int columnIndex) {
+        if (sqlite3_column_type(prepared_statement, columnIndex) == SQLITE_NULL) {
+            return std::nullopt;
+        }
+        return sqlite3_column_double(prepared_statement, columnIndex);
+    }
+
+    // Specialization for string
+    template<>
+    std::optional<std::string> getSelectParameter<std::string>(sqlite3_stmt* prepared_statement, int columnIndex) {
+        if (sqlite3_column_type(prepared_statement, columnIndex) == SQLITE_NULL) {
+            return std::nullopt;
+        }
+        const char* data = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, columnIndex));
+        return data ? std::optional<std::string>(data) : std::nullopt;
+    }
 
     template <typename T>
     bool bindParameter(int param_index, const T& value, DataType expected_type) {

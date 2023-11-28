@@ -28,7 +28,7 @@ protected:
     // Delete a record by its ID
     virtual bool deleteRecordById(int id) = 0;
 
-    virtual bool retrieveRecordById(int id) = 0;
+    virtual nlohmann::json retrieveRecordById(int id) = 0;
 
     void bindJsonOptionalString(int bind_index, const std::string& key, const nlohmann::json& json_data, const std::optional<std::string>& default_value) {
         bindOptional<std::string>(json_data, key, bind_index, DatabaseManager::DataType::TEXT, default_value);
@@ -52,6 +52,37 @@ protected:
 
     void bindJsonRequiredDouble(int bind_index, const std::string& key, const nlohmann::json& json_data) {
         db_manager->bindParameter<double>(bind_index, json_data[key], DatabaseManager::DataType::REAL);
+    }
+
+
+    void getSelectString(int index, sqlite3_stmt* prepared_statement, std::string field, nlohmann::json& json_result)
+    {
+        std::optional<std::string> result = db_manager->getSelectParameter<std::string>(prepared_statement, index);
+        if (result.has_value())
+        {
+            json_result[field] = result.value();
+        }
+        return;
+    }
+
+    void getSelectDouble(int index, sqlite3_stmt* prepared_statement, std::string field, nlohmann::json& json_result)
+    {
+        std::optional<double> result = db_manager->getSelectParameter<double>(prepared_statement, index);
+        if (result.has_value())
+        {
+            json_result[field] = result.value();
+        }
+        return;
+    }
+
+    void getSelectInt(int index, sqlite3_stmt* prepared_statement, std::string field, nlohmann::json& json_result)
+    {
+        std::optional<int> result = db_manager->getSelectParameter<int>(prepared_statement, index);
+        if (result.has_value())
+        {
+            json_result[field] = result.value();
+        }
+        return;
     }
 
     bool validateJsonFields
