@@ -21,7 +21,7 @@ int main()
         "user_description   TEXT, "
         "user_permission    INTEGER     NOT NULL        DEFAULT 1, "
         "user_visibility    BOOLEAN     NOT NULL        DEFAULT 1, "
-        "user_timestamp     BIGINT    NOT NULL        DEFAULT CURRENT_TIMESTAMP"
+        "user_timestamp     DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP"
     );
 
     
@@ -35,29 +35,6 @@ int main()
         "login_timestamp    DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP"
     );
     
-
-    UserDAO user_data_object(database);
-
-    nlohmann::json user_data =
-    {
-        {"user_name", "test_user"},
-        {"user_passhash", "hash"},
-        {"user_salt", "salt"}
-    };
-
-    /*
-    user_data_object.insertRecord(user_data);
-
-    std::cout << user_data_object.retrieveRecordById(1).dump() << std::endl;
-
-    user_data["user_name"] = "newer_name";
-
-    user_data_object.insertRecord(user_data);
-
-    std::cout << user_data_object.retrieveRecordById(2).dump() << std::endl;
-    */
-  
-    std::cout << user_data_object.getIdGivenUsername("newer_name").value_or(-1) << std::endl;
 
 
 }

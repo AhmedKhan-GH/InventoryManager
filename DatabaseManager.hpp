@@ -179,19 +179,6 @@ public:
         }
     }
 
-
-    std::optional<std::string> fetchSingleResult() {
-        if (sqlite3_step(prepared_statement) == SQLITE_ROW) {
-            const char* data = reinterpret_cast<const char*>(sqlite3_column_text(prepared_statement, 0));
-            if (data) {
-                sqlite3_finalize(prepared_statement);
-                return std::string(data);
-            }
-        }
-        sqlite3_finalize(prepared_statement);
-        return std::nullopt;
-    }
-
     bool fetchBooleanResult() {
         if (sqlite3_step(prepared_statement) == SQLITE_ROW) {
             bool result = sqlite3_column_int(prepared_statement, 0) != 0;
