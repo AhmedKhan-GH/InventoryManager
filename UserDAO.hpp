@@ -12,6 +12,14 @@
 class UserDAO : public GenericDAO {
 public:
 
+    enum class UserPermission
+    {
+        LOCK,
+        BASE,
+        SUPER,
+        ADMIN
+    };
+
     UserDAO(DatabaseManager &db_manager) : GenericDAO(&db_manager) {}
 
     //the C in CRUD
@@ -164,49 +172,32 @@ public:
         return true;
     }
 
-    /*
-    bool existenceOfRecordByField(const std::string& field_name, const std::string& value) override {
-        std::string sql = "SELECT EXISTS(SELECT 1 FROM Users WHERE " + field_name + " = ? LIMIT 1);";
-        if (!db_manager->prepareStatement(sql)) {
-            std::cerr << "Failed to prepare statement." << std::endl;
-            return false;
-        }
 
-        db_manager->bindParameter<std::string>(1, value);
-        return db_manager->fetchBooleanResult();
+    bool existenceOfRecordByField(const std::string& field_name, const std::string& value) {
+        return GenericDAO::existenceOfRecordByField("Users", field_name, value);
     }
-    
-    template<typename T>
-    std::optional<T> queryFieldById(int id, const std::string& field_name) {
-        std::string sql = "SELECT " + field_name + " FROM Users WHERE user_id = ?;";
-        if (!db_manager->prepareStatement(sql)) {
-            std::cerr << "Failed to prepare statement." << std::endl;
-            return std::nullopt;
-        }
 
-        db_manager->bindParameter<int>(1, id);
+    std::optional<int> getIdGivenUsername(const std::string& username) {
+        std::string sql = "SELECT user_id FROM Users WHERE user_name = ?;";
+
+        db_manager->prepareStatement(sql);
+        db_manager->bindParameter<std::string>(1, username);
 
         if (sqlite3_step(db_manager->getPreparedStatement()) == SQLITE_ROW) {
-            if constexpr (std::is_same_v<T, int>) {
-                return sqlite3_column_int(db_manager->getPreparedStatement(), 0);
+            nlohmann::json result_json;
+            db_manager->getParameter<int>(0, result_json, "user_id", db_manager->getPreparedStatement());
+            sqlite3_finalize(db_manager->getPreparedStatement());
+
+            if (result_json.contains("user_id")) {
+                return result_json["user_id"].get<int>();
             }
-            else if constexpr (std::is_same_v<T, double>) {
-                return sqlite3_column_double(db_manager->getPreparedStatement(), 0);
-            }
-            else if constexpr (std::is_same_v<T, std::string>) {
-                const unsigned char* text = sqlite3_column_text(db_manager->getPreparedStatement(), 0);
-                if (text) {
-                    return std::string(reinterpret_cast<const char*>(text));
-                }
-            }
-            // Add cases for other data types as needed
         }
 
         sqlite3_finalize(db_manager->getPreparedStatement());
         return std::nullopt;
     }
 
-    */
+    
 };
 
 #endif //USERDAO_HPP

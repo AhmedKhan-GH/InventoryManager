@@ -179,7 +179,6 @@ public:
         }
     }
 
-    /*
 
     std::optional<std::string> fetchSingleResult() {
         if (sqlite3_step(prepared_statement) == SQLITE_ROW) {
@@ -203,7 +202,6 @@ public:
         return false;
     }
 
-    */
 
 private:
 

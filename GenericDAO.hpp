@@ -48,14 +48,17 @@ protected:
     // Delete a record by its ID
     virtual bool deleteRecordById(int id) = 0;
 
-    /*
-    //need queryFieldByID "get me the username of the user with this id"
-    virtual bool existenceOfRecordByField(const std::string& field_name, const std::string& value) = 0;
-    //"is there a user with this id or with this name etc"
-    //need 
+    virtual bool existenceOfRecordByField(const std::string& table_name, const std::string& field_name, const std::string& value)
+    {
+        std::string sql = "SELECT EXISTS(SELECT 1 FROM " + table_name + " WHERE " + field_name + " = ? LIMIT 1); ";
+        if (!db_manager->prepareStatement(sql)) {
+            std::cerr << "Failed to prepare statement." << std::endl;
+            return false;
+        }
 
-    virtual std::optional<std::string> queryFieldById(int id, const std::string& field_name) = 0;
-    */
+        db_manager->bindParameter<std::string>(1, value);
+        return db_manager->fetchBooleanResult();
+    }
 
     DatabaseManager* db_manager;
  
