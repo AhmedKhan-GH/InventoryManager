@@ -55,9 +55,10 @@ protected:
     //need 
 
     virtual std::optional<std::string> queryFieldById(int id, const std::string& field_name) = 0;
+    */
 
     DatabaseManager* db_manager;
-    */
+ 
 };
 
 #endif //GENERICDAO_HPP

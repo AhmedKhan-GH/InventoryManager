@@ -164,6 +164,7 @@ public:
         return true;
     }
 
+    /*
     bool existenceOfRecordByField(const std::string& field_name, const std::string& value) override {
         std::string sql = "SELECT EXISTS(SELECT 1 FROM Users WHERE " + field_name + " = ? LIMIT 1);";
         if (!db_manager->prepareStatement(sql)) {
@@ -174,7 +175,7 @@ public:
         db_manager->bindParameter<std::string>(1, value);
         return db_manager->fetchBooleanResult();
     }
-
+    
     template<typename T>
     std::optional<T> queryFieldById(int id, const std::string& field_name) {
         std::string sql = "SELECT " + field_name + " FROM Users WHERE user_id = ?;";
@@ -205,84 +206,7 @@ public:
         return std::nullopt;
     }
 
-
-
-    std::string getStringFromColumn(int columnIndex) {
-        const unsigned char* text = sqlite3_column_text(db_manager->getPreparedStatement(), columnIndex);
-        if (text != nullptr) {
-            return std::string(reinterpret_cast<const char*>(text));
-        }
-        else {
-            return ""; // or handle null value appropriately
-        }
-    }
-
-    // Updated getIntFromColumn with a default value
-    int getIntFromColumn(int columnIndex, int defaultValue = 0) {
-        try {
-            if (sqlite3_column_type(db_manager->getPreparedStatement(), columnIndex) == SQLITE_NULL) {
-                return defaultValue;
-            }
-            return sqlite3_column_int(db_manager->getPreparedStatement(), columnIndex);
-        }
-        catch (const std::exception& e) {
-            std::cerr << "Error fetching int: " << e.what() << std::endl;
-            return defaultValue; // Return default value in case of error
-        }
-    }
-
-    // Updated getDoubleFromColumn with a default value
-    double getDoubleFromColumn(int columnIndex, double defaultValue = 0.0) {
-        try {
-            if (sqlite3_column_type(db_manager->getPreparedStatement(), columnIndex) == SQLITE_NULL) {
-                return defaultValue;
-            }
-            return sqlite3_column_double(db_manager->getPreparedStatement(), columnIndex);
-        }
-        catch (const std::exception& e) {
-            std::cerr << "Error fetching double: " << e.what() << std::endl;
-            return defaultValue; // Return default value in case of error
-        }
-
-    }
-
-    void updateStringById(int id, const std::string& columnName, const std::string& newValue) {
-        std::string sql = "UPDATE Users SET " + columnName + " = ? WHERE user_id = ?;";
-        db_manager->prepareStatement(sql);
-        db_manager->bindString(1, newValue);
-        db_manager->bindInt(2, id);
-        db_manager->executePrepared();
-    }
-
-    void updateIntById(int id, const std::string& columnName, int newValue) {
-        std::string sql = "UPDATE Users SET " + columnName + " = ? WHERE user_id = ?;";
-        db_manager->prepareStatement(sql);
-        db_manager->bindInt(1, newValue);
-        db_manager->bindInt(2, id);
-        db_manager->executePrepared();
-    }
-
-    void updateDoubleById(int id, const std::string& columnName, double newValue) {
-        std::string sql = "UPDATE Users SET " + columnName + " = ? WHERE user_id = ?;";
-        db_manager->prepareStatement(sql);
-        db_manager->bindDouble(1, newValue);
-        db_manager->bindInt(2, id);
-        db_manager->executePrepared();
-    }
     */
-    
 };
 
-#endif // USERDAO_HPP
-
-/*
-   std::string delete_sql = "DELETE FROM Users WHERE user_id = ?;";
-        std::map<int, DatabaseManager::DataType> delete_parameter = { { 1, DatabaseManager::DataType::INTEGER } };
-
-        db_manager->prepareStatement(delete_sql, delete_parameter);
-        db_manager->bindInt(1, id);
-        if (!db_manager->executePrepared())
-        {
-            std::cerr << "Error deleting user." << std::endl;
-        }
-*/
+#endif //USERDAO_HPP
