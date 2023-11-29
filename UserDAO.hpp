@@ -62,63 +62,149 @@ public:
         if (sqlite3_step(prepared_statement) == SQLITE_ROW) {
             // Assuming column indices are in order as per your table schema
 
-            db_manager->getSelectAndAssign<std::string>(1, prepared_statement, "user_name", json_result);
-            db_manager->getSelectAndAssign<std::string>(2, prepared_statement, "user_salt", json_result);
-            db_manager->getSelectAndAssign<std::string>(3, prepared_statement, "user_passhash", json_result);
-            db_manager->getSelectAndAssign<std::string>(4, prepared_statement, "user_legalname", json_result);
-            db_manager->getSelectAndAssign<std::string>(5, prepared_statement, "user_phonenumber", json_result);
-            db_manager->getSelectAndAssign<std::string>(6, prepared_statement, "user_emailaddress", json_result);
-            db_manager->getSelectAndAssign<std::string>(7, prepared_statement, "user_description", json_result);
+            db_manager->getParameter<std::string>(1, json_result, "user_name", prepared_statement);
+            db_manager->getParameter<std::string>(2, json_result, "user_salt", prepared_statement);
+            db_manager->getParameter<std::string>(3, json_result, "user_passhash", prepared_statement);
+            db_manager->getParameter<std::string>(4, json_result, "user_legalname", prepared_statement);
+            db_manager->getParameter<std::string>(5, json_result, "user_phonenumber", prepared_statement);
+            db_manager->getParameter<std::string>(6, json_result, "user_emailaddress", prepared_statement);
+            db_manager->getParameter<std::string>(7, json_result, "user_description", prepared_statement);
 
-            db_manager->getSelectAndAssign<int>(8, prepared_statement, "user_permission", json_result);
-            db_manager->getSelectAndAssign<int>(9, prepared_statement, "user_visibility", json_result);
-            db_manager->getSelectAndAssign<int>(10, prepared_statement, "user_timestamp", json_result);
+            db_manager->getParameter<int>(8, json_result, "user_permission", prepared_statement);
+            db_manager->getParameter<int>(9, json_result, "user_visibility", prepared_statement);
+            db_manager->getParameter<int>(10, json_result, "user_timestamp", prepared_statement);
         }
 
         return json_result;
     }
 
 
-    //U in CRUD, Update allowed paramters by ID
+    //U in CRUD, Update allowed paramters by ID, prevent update of intrinsically locked fields
+    bool updateRecordById(int id, nlohmann::json& json_data) {
+        const std::map<std::string, DataType> mutable_fields =
+        {
+            {"user_name", DataType::TEXT},
+            {"user_salt", DataType::TEXT},
+            {"user_passhash", DataType::TEXT},
+            {"user_legalname", DataType::TEXT},
+            {"user_phonenumber", DataType::TEXT},
+            {"user_emailaddress", DataType::TEXT},
+            {"user_description", DataType::TEXT},
+            {"user_permission", DataType::INTEGER},
+            {"user_visibility", DataType::INTEGER}
+        };
+        std::string sql = "UPDATE Users SET ";
+        bool first = true;
+        int param_index = 1;
 
-
-
-    /*
-    nlohmann::json selectRecordById(int id) {
-       
-        try {
-            std::string sql = "SELECT * FROM Users WHERE user_id = ?;";
-            db_manager->prepareStatement(sql);
-            db_manager->bindInt(1, id);
-
-            if (sqlite3_step(db_manager->getPreparedStatement()) == SQLITE_ROW) {
-                nlohmann::json json_result;
-                json_result["user_id"] = getIntFromColumn(0);
-                json_result["user_name"] = getStringFromColumn(1);
-                json_result["user_salt"] = getStringFromColumn(2);
-                json_result["user_passhash"] = getStringFromColumn(3);
-                json_result["user_timestamp"] = getStringFromColumn(4);
-                json_result["user_visibility"] = getIntFromColumn(5);
-                json_result["user_legalname"] = getStringFromColumn(6);
-                json_result["user_phonenumber"] = getStringFromColumn(7);
-                json_result["user_emailaddress"] = getStringFromColumn(8);
-                json_result["user_description"] = getStringFromColumn(9);
-                json_result["user_permission"] = getStringFromColumn(10);
-
-                sqlite3_finalize(db_manager->getPreparedStatement());
-                return json_result;
-            }
-            else {
-                sqlite3_finalize(db_manager->getPreparedStatement());
-                throw std::runtime_error("No record found");
+        // First Pass: Build SQL Query
+        for (const auto& field : mutable_fields) {
+            if (json_data.contains(field.first)) {
+                if (!first) {
+                    sql += ", ";
+                }
+                sql += field.first + " = ?";
+                first = false;
+                ++param_index;
             }
         }
-        catch (const std::runtime_error& e) {
-            std::cerr << "Error selecting user: " << e.what() << std::endl;
-            throw;
+
+        if (first) {
+            std::cerr << "No valid fields provided for update." << std::endl;
+            return false;
         }
-   
+
+        sql += " WHERE user_id = ?;";
+        db_manager->prepareStatement(sql);
+
+        // Second Pass: Bind Parameters
+        param_index = 1;
+        for (const auto& field : mutable_fields) {
+            if (json_data.contains(field.first)) {
+                switch (field.second) {
+                case DataType::TEXT:
+                    db_manager->bindParameter<std::string>(param_index, json_data.at(field.first).get<std::string>());
+                    break;
+                case DataType::INTEGER:
+                    db_manager->bindParameter<int>(param_index, json_data.at(field.first).get<int>());
+                    break;
+                case DataType::REAL:
+                    db_manager->bindParameter<double>(param_index, json_data.at(field.first).get<double>());
+                    break;
+                    // Add cases for other data types as needed
+                }
+                ++param_index;
+            }
+        }
+
+        // Binding the user ID
+        db_manager->bindParameter<int>(param_index, id);
+
+        // Execute the prepared statement
+        if (!db_manager->executePrepared()) {
+            std::cerr << "Error in updateRecordById" << std::endl;
+            return false;
+        }
+
+        return true;
     }
+
+    //D in CRUD
+    bool deleteRecordById(int id) override {
+        std::string sql = "UPDATE Users SET user_visibility = ? WHERE user_id = ?;";
+        db_manager->prepareStatement(sql);
+        db_manager->bindParameter<int>(1, 0);
+        db_manager->bindParameter<int>(2, id);
+        if (!db_manager->executePrepared())
+        {
+            std::cerr << "Error in deleteRecordById." << std::endl;
+            return false;
+        }
+        std::cout << "Users table is append only. User has been set to invisible." << std::endl;
+        return true;
+    }
+
+    bool existenceOfRecordByField(const std::string& field_name, const std::string& value) override {
+        std::string sql = "SELECT EXISTS(SELECT 1 FROM Users WHERE " + field_name + " = ? LIMIT 1);";
+        if (!db_manager->prepareStatement(sql)) {
+            std::cerr << "Failed to prepare statement." << std::endl;
+            return false;
+        }
+
+        db_manager->bindParameter<std::string>(1, value);
+        return db_manager->fetchBooleanResult();
+    }
+
+    template<typename T>
+    std::optional<T> queryFieldById(int id, const std::string& field_name) {
+        std::string sql = "SELECT " + field_name + " FROM Users WHERE user_id = ?;";
+        if (!db_manager->prepareStatement(sql)) {
+            std::cerr << "Failed to prepare statement." << std::endl;
+            return std::nullopt;
+        }
+
+        db_manager->bindParameter<int>(1, id);
+
+        if (sqlite3_step(db_manager->getPreparedStatement()) == SQLITE_ROW) {
+            if constexpr (std::is_same_v<T, int>) {
+                return sqlite3_column_int(db_manager->getPreparedStatement(), 0);
+            }
+            else if constexpr (std::is_same_v<T, double>) {
+                return sqlite3_column_double(db_manager->getPreparedStatement(), 0);
+            }
+            else if constexpr (std::is_same_v<T, std::string>) {
+                const unsigned char* text = sqlite3_column_text(db_manager->getPreparedStatement(), 0);
+                if (text) {
+                    return std::string(reinterpret_cast<const char*>(text));
+                }
+            }
+            // Add cases for other data types as needed
+        }
+
+        sqlite3_finalize(db_manager->getPreparedStatement());
+        return std::nullopt;
+    }
+
 
 
     std::string getStringFromColumn(int columnIndex) {
@@ -185,19 +271,6 @@ public:
     }
     */
     
-    //D in CRUD
-    bool deleteRecordById(int id) override {
-        std::string sql = "UPDATE Users SET user_visibility = ? WHERE user_id = ?;";
-        db_manager->prepareStatement(sql);
-        db_manager->bindParameter<int>(1, 0);
-        db_manager->bindParameter<int>(2, id);
-        if(!db_manager->executePrepared())
-        {
-            std::cerr << "Error in deleteRecordById." << std::endl;
-            return false;
-        }
-        return true;
-    }
 };
 
 #endif // USERDAO_HPP
